@@ -763,215 +763,343 @@ def main_app():
     with tabs[2]:
         st.title("🏋️ Training & Exercises")
         
-        training_tabs = st.tabs(["📚 Exercise Library", "📝 Log Workout", "📅 Calendar Log"])
+        training_tabs = st.tabs(["📚 Exercise Library", "📝 Log Workout"])
         
-        # Subtab: Exercise Library
+        # ─────────────────────────────────────────────
+        # Subtab 1: Exercise Library (Add & View)
+        # ─────────────────────────────────────────────
         with training_tabs[0]:
-            col1, col2 = st.columns(2)
+            st.subheader("📚 Manage Your Exercise Library")
+            st.write("Add new exercises or view all available exercises in your library.")
             
-            with col1:
-                st.subheader("➕ Add Exercise")
+            col_add, col_list = st.columns([1, 1])
+            
+            # Column 1: Add Exercise Form
+            with col_add:
+                st.markdown("### ➕ Add New Exercise")
                 
-                # Search for exercises from online database
-                search_add = st.text_input(
-                    "🔍 Search online database for exercise ideas",
-                    placeholder="e.g., 'squat', 'bench press'...",
-                    key="exercise_add_search"
+                # Option 1: Search online database for ideas
+                st.write("**Option 1: Search online database for ideas**")
+                search_online = st.text_input(
+                    "Search exercises",
+                    placeholder="e.g., squat, bench press, deadlift...",
+                    key="ex_search_online"
                 )
                 
-                # Show suggestions from online database
-                if search_add:
+                if search_online:
                     online_db = fetch_exercise_database()
-                    suggestions = [
+                    filtered = [
                         ex for ex in online_db 
-                        if search_add.lower() in ex.get('name', '').lower()
-                    ][:10]
+                        if search_online.lower() in ex.get('name', '').lower()
+                    ][:8]
                     
-                    if suggestions:
-                        st.write("**Suggestions from database:**")
-                        for ex in suggestions:
-                            col_name, col_target, col_equip = st.columns([2, 1, 1])
-                            with col_name:
-                                if st.button(f"🔗 {ex['name'].title()}", key=f"add_ex_{ex['id']}", use_container_width=True):
-                                    st.session_state.exercise_name = ex['name'].title()
-                                    st.session_state.exercise_target = ex.get('target', 'full-body')
-                                    st.session_state.exercise_equipment = ex.get('equipment', 'strength')
-                            with col_target:
-                                st.caption(f"🎯 {ex.get('target', 'N/A').title()}")
-                            with col_equip:
-                                st.caption(f"🔧 {ex.get('equipment', 'N/A').title()}")
+                    if filtered:
+                        st.write("*Select an exercise from the list below:*")
+                        for ex in filtered:
+                            if st.button(
+                                f"📌 {ex['name'].title()}\n🎯 {ex.get('target', 'N/A').title()} | 🔧 {ex.get('equipment', 'N/A').title()}",
+                                key=f"import_ex_{ex['id']}",
+                                use_container_width=True
+                            ):
+                                st.session_state.selected_online_exercise = ex
+                                st.rerun()
                 
                 st.divider()
+                st.write("**Option 2: Or create your own**")
                 
-                with st.form("add_exercise"):
-                    # Use session state if populated from online suggestions
-                    default_name = st.session_state.get("exercise_name", "")
-                    default_target = st.session_state.get("exercise_target", "")
-                    default_equip = st.session_state.get("exercise_equipment", "")
+                # Form to add exercise
+                with st.form("add_exercise_form", clear_on_submit=True):
+                    ex_name = st.text_input(
+                        "Exercise Name *",
+                        placeholder="e.g., Barbell Squat",
+                        value=st.session_state.get("selected_online_exercise", {}).get("name", "").title() if st.session_state.get("selected_online_exercise") else ""
+                    )
                     
-                    name = st.text_input("Exercise Name", placeholder="Barbell Squat", value=default_name)
-                    category = st.selectbox("Category", ["strength", "cardio", "flexibility"], 
-                                          index=0 if default_equip != "cardio" else 1)
+                    ex_category = st.selectbox(
+                        "Type *",
+                        ["strength", "cardio", "flexibility"]
+                    )
                     
-                    muscle_options = ["legs", "chest", "back", "shoulders", "arms", "core", "full-body"]
-                    default_idx = muscle_options.index(default_target) if default_target in muscle_options else 6
-                    muscle = st.selectbox("Muscle Group", muscle_options, index=default_idx)
+                    muscle_groups = ["legs", "chest", "back", "shoulders", "arms", "core", "full-body"]
+                    default_muscle = st.session_state.get("selected_online_exercise", {}).get("target", "full-body").lower()
+                    default_idx = muscle_groups.index(default_muscle) if default_muscle in muscle_groups else 6
                     
-                    desc = st.text_area("Description", placeholder="Optional...", value="")
+                    ex_muscle = st.selectbox(
+                        "Target Muscle Group *",
+                        muscle_groups,
+                        index=default_idx
+                    )
                     
-                    if st.form_submit_button("➕ Add Exercise", use_container_width=True):
-                        new = create_exercise({
-                            "name": name,
-                            "category": category,
-                            "muscle_group": muscle,
-                            "description": desc if desc else None,
-                        })
-                        if new:
-                            st.success(f"✅ {name} added!")
-                            # Clear session state
-                            st.session_state.exercise_name = ""
-                            st.session_state.exercise_target = ""
-                            st.session_state.exercise_equipment = ""
-                            st.rerun()
-            
-            with col2:
-                st.subheader("📚 All Exercises")
-                exercises = list_exercises()
-                if exercises:
-                    for ex in exercises:
-                        st.write(f"💪 **{ex['name']}** [{ex['category']}]")
-                        st.caption(f"🎯 {ex['muscle_group']}")
-                else:
-                    st.info("No exercises. Add some to get started!")
-        
-        # Subtab: Log Workout
-        with training_tabs[1]:
-            st.subheader("➕ Log Workout")
-            
-            # Search for exercises from online database
-            st.write("**Search and select an exercise:**")
-            
-            # Get online exercise database
-            online_exercises = fetch_exercise_database()
-            user_exercises = list_exercises()
-            
-            # Search box for online exercises
-            search_term = st.text_input(
-                "🔍 Search exercise (e.g., 'squat', 'bench press')",
-                placeholder="Type to search from 1000+ exercises...",
-                key="exercise_search"
-            )
-            
-            if search_term:
-                # Filter online exercises by search
-                suggestions = [
-                    ex for ex in online_exercises 
-                    if search_term.lower() in ex.get('name', '').lower()
-                ][:30]  # Limit to 30 results
-            else:
-                suggestions = online_exercises[:30]  # Show top 30 by default
-            
-            # Create formatted display options
-            if suggestions:
-                # Add online exercises from database
-                exercise_options = []
-                for ex in suggestions:
-                    formatted = format_exercise_option(ex)
-                    exercise_options.append((formatted, ex))
-                
-                # Add divider and user's custom exercises
-                if user_exercises:
-                    exercise_options.append(("" + "="*50, None))
-                    for ex in user_exercises:
-                        formatted = f"[MY EXERCISE] {ex['name']} • {ex['muscle_group']}"
-                        exercise_options.append((formatted, ex))
-                
-                # Display as selectbox
-                selected_display = st.selectbox(
-                    "Select exercise",
-                    exercise_options,
-                    format_func=lambda x: x[0],
-                    key="exercise_select"
-                )
-                selected_exercise = selected_display[1]
-                
-                if selected_exercise:
-                    # Get or create exercise in database
-                    if "id" in selected_exercise:
-                        # User's custom exercise
-                        exercise_id = selected_exercise["id"]
-                        exercise_name = selected_exercise["name"]
-                    else:
-                        # Online database exercise - first check if exists in user's db
-                        ex_name = selected_exercise.get('name', '').title()
-                        existing = next(
-                            (e for e in user_exercises if e['name'].lower() == ex_name.lower()),
-                            None
-                        )
-                        if existing:
-                            exercise_id = existing["id"]
-                            exercise_name = existing["name"]
+                    ex_desc = st.text_area(
+                        "Description (optional)",
+                        placeholder="How to perform this exercise, tips, form cues...",
+                        height=80
+                    )
+                    
+                    if st.form_submit_button("✅ Add Exercise", use_container_width=True):
+                        if not ex_name.strip():
+                            st.error("❌ Exercise name is required")
                         else:
-                            # Create new exercise from online database
-                            new_ex = create_exercise({
-                                "name": ex_name,
-                                "category": selected_exercise.get('equipment', 'strength'),
-                                "muscle_group": selected_exercise.get('target', 'full-body'),
-                                "description": f"From online database",
+                            result = create_exercise({
+                                "name": ex_name.strip(),
+                                "category": ex_category,
+                                "muscle_group": ex_muscle,
+                                "description": ex_desc if ex_desc.strip() else None,
                             })
-                            if new_ex:
-                                exercise_id = new_ex["id"]
-                                exercise_name = new_ex["name"]
+                            if result:
+                                st.success(f"✅ **{ex_name}** has been added to your library!")
+                                if "selected_online_exercise" in st.session_state:
+                                    del st.session_state.selected_online_exercise
+                                st.rerun()
                             else:
-                                st.error("Failed to create exercise")
-                                exercise_id = None
-                                exercise_name = None
-                    
-                    # Log workout form
-                    if exercise_id:
-                        st.divider()
-                        with st.form("log_workout"):
-                            st.write(f"**Selected:** 💪 {exercise_name}")
-                            log_date = st.date_input("Date", value=date.today())
-                            sets = st.number_input("Sets", min_value=1, max_value=100, value=3)
-                            reps = st.number_input("Reps", min_value=1, max_value=1000, value=8)
-                            weight = st.number_input("Weight (kg)", min_value=0, max_value=1000.0, value=80.0)
-                            notes = st.text_area("Notes (optional)")
-                            
-                            if st.form_submit_button("📝 Log Workout", use_container_width=True):
-                                new = create_workout_log({
-                                    "exercise_id": exercise_id,
-                                    "log_date": str(log_date),
-                                    "sets": int(sets),
-                                    "reps": int(reps),
-                                    "weight_kg": float(weight),
-                                    "notes": notes if notes else None,
-                                })
-                                if new:
-                                    st.success("✅ Workout logged!")
-                                    st.rerun()
-                else:
-                    st.info("ℹ️ Type an exercise name to search or select from the dropdown")
-            else:
-                st.info("ℹ️ Loading exercise database... type to search")
+                                st.error("❌ Failed to add exercise. Please try again.")
             
-            # Recent workouts sidebar
+            # Column 2: List All Exercises
+            with col_list:
+                st.markdown("### 📚 Your Exercise Library")
+                exercises = list_exercises()
+                
+                if exercises:
+                    st.write(f"*Total exercises: **{len(exercises)}***")
+                    st.divider()
+                    
+                    # Group by muscle group
+                    muscle_groups = {}
+                    for ex in exercises:
+                        muscle = ex.get("muscle_group", "Other")
+                        if muscle not in muscle_groups:
+                            muscle_groups[muscle] = []
+                        muscle_groups[muscle].append(ex)
+                    
+                    # Display grouped
+                    for muscle, exs in sorted(muscle_groups.items()):
+                        with st.expander(f"**{muscle.title()}** ({len(exs)})"):
+                            for ex in exs:
+                                col_name, col_type = st.columns([3, 1])
+                                with col_name:
+                                    st.write(f"💪 **{ex['name']}**")
+                                    if ex.get("description"):
+                                        st.caption(ex['description'])
+                                with col_type:
+                                    st.caption(f"`{ex['category']}`")
+                else:
+                    st.info("📭 No exercises yet. Add one to get started!")
+        
+        # ─────────────────────────────────────────────
+        # Subtab 2: Log Workout (Search & Date)
+        # ─────────────────────────────────────────────
+        with training_tabs[1]:
+            st.subheader("📝 Log a New Workout")
+            st.write("Search for an exercise and record your workout with the date it was performed.")
+            
+            # Initialize state for exercise selection
+            if "selected_log_exercise" not in st.session_state:
+                st.session_state.selected_log_exercise = None
+            
+            col_search, col_date = st.columns([2, 1])
+            
+            with col_search:
+                st.write("**Step 1: Search & Select Exercise**")
+                
+                # Get exercise database
+                online_exercises = fetch_exercise_database()
+                user_exercises = list_exercises()
+                
+                # Search input
+                search_term = st.text_input(
+                    "🔍 Search exercise",
+                    placeholder="Type exercise name (squat, bench, running...)",
+                    key="log_workout_search"
+                )
+                
+                # Filter suggestions
+                if search_term:
+                    online_filtered = [
+                        ex for ex in online_exercises 
+                        if search_term.lower() in ex.get('name', '').lower()
+                    ][:10]
+                else:
+                    online_filtered = []
+                
+                user_filtered = [
+                    ex for ex in user_exercises 
+                    if not search_term or search_term.lower() in ex['name'].lower()
+                ]
+                
+                # Display user exercises first
+                if user_filtered:
+                    st.write("**Your Exercises:**")
+                    for ex in user_filtered:
+                        if st.button(
+                            f"✓ {ex['name']}\n{ex['category']} • {ex['muscle_group']}",
+                            key=f"select_user_ex_{ex['id']}",
+                            use_container_width=True
+                        ):
+                            st.session_state.selected_log_exercise = ex
+                            st.rerun()
+                
+                # Display online suggestions
+                if online_filtered:
+                    st.write("**From Exercise Database:**")
+                    for ex in online_filtered:
+                        if st.button(
+                            f"+ {ex['name'].title()}\n{ex.get('equipment', 'equipment')} • {ex.get('target', 'target')}",
+                            key=f"select_online_ex_{ex['id']}",
+                            use_container_width=True
+                        ):
+                            # Check if exists in user library
+                            existing = next(
+                                (e for e in user_exercises if e['name'].lower() == ex['name'].lower()),
+                                None
+                            )
+                            if existing:
+                                st.session_state.selected_log_exercise = existing
+                            else:
+                                st.session_state.selected_log_exercise = ex
+                            st.rerun()
+                
+                if not user_filtered and not online_filtered and search_term:
+                    st.info("No exercises found. Try a different search term.")
+            
+            with col_date:
+                st.write("**Step 2: Select Date**")
+                log_date = st.date_input(
+                    "📅 Date of workout",
+                    value=date.today(),
+                    key="workout_date_input"
+                )
+                st.info(f"Selected: **{log_date.strftime('%a, %b %d, %Y')}**")
+            
+            st.divider()
+            
+            # Show form if exercise is selected
+            if st.session_state.selected_log_exercise:
+                selected = st.session_state.selected_log_exercise
+                
+                # Determine exercise info
+                if "id" in selected:
+                    # User's custom exercise
+                    exercise_id = selected["id"]
+                    exercise_name = selected["name"]
+                else:
+                    # Online database - check if exists or create
+                    ex_name = selected.get('name', '').title()
+                    existing = next(
+                        (e for e in user_exercises if e['name'].lower() == ex_name.lower()),
+                        None
+                    )
+                    if existing:
+                        exercise_id = existing["id"]
+                        exercise_name = existing["name"]
+                    else:
+                        # Create it
+                        new_ex = create_exercise({
+                            "name": ex_name,
+                            "category": selected.get('equipment', 'strength'),
+                            "muscle_group": selected.get('target', 'full-body'),
+                            "description": "From exercise database",
+                        })
+                        if new_ex:
+                            exercise_id = new_ex["id"]
+                            exercise_name = new_ex["name"]
+                        else:
+                            exercise_id = None
+                
+                if exercise_id:
+                    # Display selected exercise
+                    st.markdown(f"### 💪 Selected: **{exercise_name}**")
+                    st.write(f"**Date:** {log_date.strftime('%A, %B %d, %Y')}")
+                    
+                    st.write("**Step 3: Log Your Performance**")
+                    
+                    with st.form("log_workout_form"):
+                        col1, col2, col3 = st.columns(3)
+                        
+                        with col1:
+                            sets = st.number_input(
+                                "Sets",
+                                min_value=1,
+                                max_value=100,
+                                value=3,
+                                help="Number of sets performed"
+                            )
+                        
+                        with col2:
+                            reps = st.number_input(
+                                "Reps",
+                                min_value=1,
+                                max_value=1000,
+                                value=8,
+                                help="Number of repetitions per set"
+                            )
+                        
+                        with col3:
+                            weight = st.number_input(
+                                "Weight (kg)",
+                                min_value=0.0,
+                                max_value=1000.0,
+                                value=50.0,
+                                step=2.5,
+                                help="Weight used (0 for bodyweight)"
+                            )
+                        
+                        notes = st.text_area(
+                            "Notes (optional)",
+                            placeholder="How did it feel? Any observations?",
+                            height=60
+                        )
+                        
+                        if st.form_submit_button("✅ Log This Workout", use_container_width=True):
+                            result = create_workout_log({
+                                "exercise_id": exercise_id,
+                                "log_date": str(log_date),
+                                "sets": int(sets),
+                                "reps": int(reps),
+                                "weight_kg": float(weight),
+                                "notes": notes if notes.strip() else None,
+                            })
+                            
+                            if result:
+                                st.success(f"✅ **Workout logged for {log_date.strftime('%B %d')}!**")
+                                st.balloons()
+                                st.session_state.selected_log_exercise = None
+                                st.rerun()
+                            else:
+                                st.error("❌ Failed to log workout. Please try again.")
+                    
+                    if st.button("❌ Clear Selection", use_container_width=True):
+                        st.session_state.selected_log_exercise = None
+                        st.rerun()
+            
+            # Recent workouts history
             st.divider()
             st.subheader("📊 Recent Workouts")
+            
             logs = list_workout_logs()
             if logs:
-                for log in reversed(logs[-5:]):
-                    st.write(f"📅 {log['log_date']} | {log['sets']}×{log['reps']} @ {log['weight_kg']} kg")
-                    if log.get('notes'):
-                        st.caption(f"📝 {log['notes']}")
+                # Group by date (most recent first)
+                from datetime import datetime
+                grouped_by_date = {}
+                for log in logs:
+                    log_date_str = log.get('log_date', 'Unknown')
+                    if log_date_str not in grouped_by_date:
+                        grouped_by_date[log_date_str] = []
+                    grouped_by_date[log_date_str].append(log)
+                
+                for log_date_str in sorted(grouped_by_date.keys(), reverse=True)[:10]:
+                    logs_on_date = grouped_by_date[log_date_str]
+                    with st.expander(f"📅 **{log_date_str}** ({len(logs_on_date)} workout{'s' if len(logs_on_date) > 1 else ''})"):
+                        for log in logs_on_date:
+                            col1, col2, col3 = st.columns([2, 2, 1])
+                            with col1:
+                                st.write(f"💪 {log.get('exercise_name', 'Exercise')}")
+                            with col2:
+                                st.caption(f"{log['sets']}×{log['reps']} @ {log['weight_kg']} kg")
+                            with col3:
+                                if log.get('notes'):
+                                    st.caption(f"📝 {log['notes'][:30]}...")
             else:
-                st.info("No workouts logged yet.")
-        
-        # Subtab: Calendar Log
-        with training_tabs[2]:
-            st.subheader("📅 Training Calendar")
-            logs = list_workout_logs()
-            display_workout_calendar(logs)
+                st.info("🏋️ No workouts logged yet. Start by logging your first workout!")
     
     # ─────────────────────────────────────────────
     # Tab 3: Nutrition (with AI Food Analyzer)
