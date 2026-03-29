@@ -1,6 +1,6 @@
 # 🏋️ FitLog – Fitness & Nutrition Tracking API
 
-FitLog is a full-stack fitness tracking system: FastAPI backend + Streamlit frontend. This is the EX1+EX2 submission for the Fitness domain.
+FitLog is a full-stack fitness tracking system: FastAPI backend + Streamlit frontend. 
 
 ---
 
