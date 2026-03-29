@@ -606,12 +606,23 @@ def create_workout_log(data):
     try:
         client = get_api_with_auth()
         response = client.post("/logs/", json=data)
+        
+        # Success
         if response.status_code == 201:
             list_workout_logs.clear()  # Invalidate cache
             return response.json()
+        
+        # Handle errors with details
+        try:
+            error_detail = response.json().get("detail", response.text)
+        except:
+            error_detail = response.text
+        
+        st.error(f"❌ API Error ({response.status_code}): {error_detail}")
         return None
+        
     except Exception as e:
-        st.error(f"❌ Error: {e}")
+        st.error(f"❌ Connection Error: {str(e)}")
         return None
 
 
@@ -1271,22 +1282,26 @@ def main_app():
                         if not exercise_id:
                             st.error("❌ Exercise selection error. Please try again.")
                         else:
-                            result = create_workout_log({
+                            # Prepare workout data
+                            workout_data = {
                                 "exercise_id": str(exercise_id),
                                 "log_date": str(log_date),
                                 "sets": int(sets),
                                 "reps": int(reps),
                                 "weight_kg": float(weight),
-                                "notes": notes if notes.strip() else None,
-                            })
+                                "notes": notes.strip() if notes and notes.strip() else None,
+                            }
+                            
+                            # Show what's being sent (for debugging)
+                            with st.spinner("📤 Logging workout..."):
+                                result = create_workout_log(workout_data)
                             
                             if result:
                                 st.success(f"✅ **Workout logged for {log_date.strftime('%B %d')}!**")
                                 st.balloons()
                                 st.session_state.selected_log_exercise = None
                                 st.rerun()
-                            else:
-                                st.error("❌ Failed to log workout. Please check your connection and try again.")
+                            # Error is already shown by create_workout_log function
             
             # Recent workouts history
             st.divider()
