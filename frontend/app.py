@@ -12,77 +12,442 @@ from functools import lru_cache
 API_BASE = st.secrets.get("API_BASE", "http://localhost:8000")
 
 st.set_page_config(
-    page_title="FitLog - Fitness Tracker",
-    page_icon="🏋️",
+    page_title="FitLog",
+    page_icon="💪",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Professional custom CSS
+# 🎨 MATERIAL DESIGN 3 - Professional Google-Style Theme
 st.markdown("""
     <style>
-        /* Main styling */
-        :root {
-            --primary: #1f77b4;
-            --success: #2ca02c;
-            --warning: #ff7f0e;
-            --danger: #d62728;
-        }
+    /* ═══════════════════════════════════════════════════════════════
+       MATERIAL DESIGN 3 COLOR SYSTEM (Google Modern Design)
+       ═══════════════════════════════════════════════════════════════ */
+    
+    :root {
+        /* Primary Colors - Brand Identity */
+        --md-primary: #6750a4;      /* Purple - Main brand color */
+        --md-primary-container: #eaddff;
+        --md-on-primary: #ffffff;
         
-        /* Header styling */
-        .header {
-            padding: 1.5rem 0;
-            border-bottom: 2px solid #e0e0e0;
-            margin-bottom: 2rem;
-        }
+        /* Secondary Colors - Supporting brand color */
+        --md-secondary: #625b71;    /* Taupe */
+        --md-secondary-container: #e8def8;
+        --md-on-secondary: #ffffff;
         
-        /* Tab styling */
-        .stTabs [data-baseweb="tab-list"] {
-            gap: 1rem;
-            background-color: #f8f9fa;
-            border-radius: 0.5rem;
-            padding: 0.5rem;
-        }
+        /* Tertiary Colors - Accent */
+        --md-tertiary: #7d5260;     /* Pink */
+        --md-tertiary-container: #ffd8e4;
+        --md-on-tertiary: #ffffff;
         
-        .stTabs [data-baseweb="tab"] {
-            padding: 1rem;
-            border-radius: 0.375rem;
-        }
+        /* Semantic Colors */
+        --md-success: #10b981;      /* Emerald Green */
+        --md-warning: #f59e0b;      /* Amber */
+        --md-error: #ef4444;        /* Red */
+        --md-info: #3b82f6;         /* Blue */
         
-        /* Card styling */
-        .card {
-            background: white;
-            border-radius: 0.5rem;
-            border: 1px solid #e0e0e0;
-            padding: 1.5rem;
-            margin: 1rem 0;
-        }
+        /* Neutral Colors */
+        --md-surface: #fffbfe;
+        --md-surface-dim: #f3eff4;
+        --md-surface-bright: #fffbfe;
+        --md-outline: #79747e;
+        --md-outline-variant: #cac7d0;
         
-        /* Metric cards */
-        .metric-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 0.5rem;
-            padding: 1.5rem;
-            text-align: center;
-        }
+        /* Neutral Grays */
+        --md-gray-50: #f9fafb;
+        --md-gray-100: #f3f4f6;
+        --md-gray-200: #e5e7eb;
+        --md-gray-300: #d1d5db;
+        --md-gray-400: #9ca3af;
+        --md-gray-600: #4b5563;
+        --md-gray-700: #374151;
+        --md-gray-900: #111827;
         
-        /* Professional colors */
-        .success-color { color: #2ca02c; }
-        .warning-color { color: #ff7f0e; }
-        .danger-color { color: #d62728; }
-        
-        /* Sidebar improvements */
-        [data-testid="stSidebar"] {
-            background-color: #f8f9fa;
+        /* Shadows - Google Material Design */
+        --md-shadow-1: 0 1px 2px rgba(0, 0, 0, 0.05);
+        --md-shadow-2: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+        --md-shadow-3: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+        --md-shadow-4: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
+        --md-shadow-5: 0 20px 25px rgba(0, 0, 0, 0.1), 0 10px 10px rgba(0, 0, 0, 0.04);
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       GLOBAL STYLES
+       ═══════════════════════════════════════════════════════════════ */
+    
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    html, body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+        background-color: var(--md-gray-50);
+        color: var(--md-gray-900);
+    }
+    
+    /* Main content area */
+    .main {
+        background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       BUTTONS - Elevated & Filled Style
+       ═══════════════════════════════════════════════════════════════ */
+    
+    .stButton > button {
+        background-color: var(--md-primary) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 100px !important;
+        padding: 12px 28px !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        letter-spacing: 0.5px !important;
+        box-shadow: var(--md-shadow-2) !important;
+        transition: all 0.3s ease !important;
+        text-transform: uppercase !important;
+    }
+    
+    .stButton > button:hover {
+        background-color: #5a47a0 !important;
+        box-shadow: var(--md-shadow-4) !important;
+        transform: translateY(-2px) !important;
+    }
+    
+    .stButton > button:active {
+        transform: translateY(0) !important;
+        box-shadow: var(--md-shadow-2) !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       INPUT FIELDS - Material Design Style
+       ═══════════════════════════════════════════════════════════════ */
+    
+    .stTextInput > div > div > input,
+    .stTextArea > div > div > textarea,
+    .stNumberInput > div > div > input,
+    .stSelectbox > div > div > select {
+        background-color: var(--md-gray-100) !important;
+        border: 2px solid var(--md-outline-variant) !important;
+        border-radius: 12px !important;
+        padding: 14px 16px !important;
+        font-size: 14px !important;
+        transition: all 0.2s ease !important;
+        font-family: inherit !important;
+    }
+    
+    .stTextInput > div > div > input:focus,
+    .stTextArea > div > div > textarea:focus,
+    .stNumberInput > div > div > input:focus,
+    .stSelectbox > div > div > select:focus {
+        background-color: white !important;
+        border-color: var(--md-primary) !important;
+        box-shadow: 0 0 0 3px rgba(103, 80, 164, 0.1) !important;
+        outline: none !important;
+    }
+    
+    /* Input label styling */
+    .stTextInput label,
+    .stTextArea label,
+    .stNumberInput label,
+    .stSelectbox label {
+        font-weight: 600 !important;
+        color: var(--md-gray-900) !important;
+        margin-bottom: 8px !important;
+        font-size: 14px !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       TABS - Modern Design
+       ═══════════════════════════════════════════════════════════════ */
+    
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px !important;
+        background-color: transparent !important;
+        border-bottom: 2px solid var(--md-outline-variant) !important;
+        padding: 0 !important;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        padding: 12px 20px !important;
+        border-radius: 0 !important;
+        border-bottom: 3px solid transparent !important;
+        color: var(--md-gray-600) !important;
+        font-weight: 600 !important;
+        font-size: 14px !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stTabs [data-baseweb="tab"][aria-selected="true"] {
+        color: var(--md-primary) !important;
+        border-bottom-color: var(--md-primary) !important;
+    }
+    
+    .stTabs [data-baseweb="tab"]:hover {
+        color: var(--md-primary) !important;
+        background-color: rgba(103, 80, 164, 0.05) !important;
+    }
+    
+    .stTabs [data-baseweb="tab-content"] {
+        padding-top: 24px !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       CARDS & CONTAINERS
+       ═══════════════════════════════════════════════════════════════ */
+    
+    .stMetric {
+        background: white !important;
+        padding: 20px !important;
+        border-radius: 16px !important;
+        border: 1px solid var(--md-outline-variant) !important;
+        box-shadow: var(--md-shadow-1) !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    .stMetric:hover {
+        box-shadow: var(--md-shadow-3) !important;
+        border-color: var(--md-primary) !important;
+    }
+    
+    /* Metric label */
+    .stMetric label {
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.5px !important;
+        color: var(--md-gray-600) !important;
+        text-transform: uppercase !important;
+    }
+    
+    /* Metric value */
+    .stMetric .metric-value {
+        font-size: 28px !important;
+        font-weight: 700 !important;
+        color: var(--md-primary) !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       SIDEBAR - Material Design
+       ═══════════════════════════════════════════════════════════════ */
+    
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #f5f3f9 0%, #faf8fc 100%) !important;
+        border-right: 1px solid var(--md-outline-variant) !important;
+    }
+    
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3 {
+        font-weight: 700 !important;
+        color: var(--md-gray-900) !important;
+        margin-top: 24px !important;
+        margin-bottom: 12px !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       DIVIDERS & SEPARATORS
+       ═══════════════════════════════════════════════════════════════ */
+    
+    hr {
+        background: linear-gradient(90deg, transparent, var(--md-outline-variant), transparent) !important;
+        border: none !important;
+        height: 1px !important;
+        margin: 24px 0 !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       EXPANDERS & COLLAPSIBLE SECTIONS
+       ═══════════════════════════════════════════════════════════════ */
+    
+    .streamlit-expander {
+        border: 1px solid var(--md-outline-variant) !important;
+        border-radius: 12px !important;
+        background-color: white !important;
+        margin: 8px 0 !important;
+    }
+    
+    .streamlit-expanderHeader {
+        padding: 16px !important;
+        font-weight: 600 !important;
+        color: var(--md-gray-900) !important;
+    }
+    
+    .streamlit-expanderHeader:hover {
+        background-color: var(--md-gray-50) !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       INFO, WARNING, SUCCESS, ERROR BOXES
+       ═══════════════════════════════════════════════════════════════ */
+    
+    .stSuccess {
+        background-color: rgba(16, 185, 129, 0.1) !important;
+        border: 1px solid var(--md-success) !important;
+        border-radius: 12px !important;
+        padding: 16px !important;
+    }
+    
+    .stSuccess > div > p {
+        color: #065f46 !important;
+        font-weight: 500 !important;
+    }
+    
+    .stError {
+        background-color: rgba(239, 68, 68, 0.1) !important;
+        border: 1px solid var(--md-error) !important;
+        border-radius: 12px !important;
+        padding: 16px !important;
+    }
+    
+    .stError > div > p {
+        color: #7f1d1d !important;
+        font-weight: 500 !important;
+    }
+    
+    .stWarning {
+        background-color: rgba(245, 158, 11, 0.1) !important;
+        border: 1px solid var(--md-warning) !important;
+        border-radius: 12px !important;
+        padding: 16px !important;
+    }
+    
+    .stWarning > div > p {
+        color: #78350f !important;
+        font-weight: 500 !important;
+    }
+    
+    .stInfo {
+        background-color: rgba(59, 130, 246, 0.1) !important;
+        border: 1px solid var(--md-info) !important;
+        border-radius: 12px !important;
+        padding: 16px !important;
+    }
+    
+    .stInfo > div > p {
+        color: #1e3a8a !important;
+        font-weight: 500 !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       TYPOGRAPHY
+       ═══════════════════════════════════════════════════════════════ */
+    
+    h1 {
+        font-size: 32px !important;
+        font-weight: 700 !important;
+        color: var(--md-gray-900) !important;
+        margin-bottom: 24px !important;
+        letter-spacing: -0.5px !important;
+    }
+    
+    h2 {
+        font-size: 24px !important;
+        font-weight: 700 !important;
+        color: var(--md-gray-900) !important;
+        margin-top: 24px !important;
+        margin-bottom: 16px !important;
+    }
+    
+    h3 {
+        font-size: 18px !important;
+        font-weight: 700 !important;
+        color: var(--md-gray-900) !important;
+        margin-top: 16px !important;
+        margin-bottom: 12px !important;
+    }
+    
+    p, span, label {
+        font-size: 14px !important;
+        line-height: 1.6 !important;
+        color: var(--md-gray-700) !important;
+    }
+    
+    /* Caption text */
+    .caption {
+        font-size: 12px !important;
+        color: var(--md-gray-600) !important;
+        font-weight: 500 !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       FORMS
+       ═══════════════════════════════════════════════════════════════ */
+    
+    .stForm {
+        background: white !important;
+        padding: 24px !important;
+        border-radius: 16px !important;
+        border: 1px solid var(--md-outline-variant) !important;
+        box-shadow: var(--md-shadow-1) !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       COLUMNS & LAYOUT
+       ═══════════════════════════════════════════════════════════════ */
+    
+    [data-testid="column"] {
+        padding: 0 12px !important;
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       SCROLLBAR STYLING
+       ═══════════════════════════════════════════════════════════════ */
+    
+    /* Webkit browsers */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    
+    ::-webkit-scrollbar-track {
+        background: var(--md-gray-100);
+    }
+    
+    ::-webkit-scrollbar-thumb {
+        background: var(--md-outline);
+        border-radius: 4px;
+    }
+    
+    ::-webkit-scrollbar-thumb:hover {
+        background: var(--md-primary);
+    }
+    
+    /* ═══════════════════════════════════════════════════════════════
+       TRANSITIONS & ANIMATIONS
+       ═══════════════════════════════════════════════════════════════ */
+    
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
         }
-        
-        /* Button styling */
-        .stButton > button {
-            border-radius: 0.375rem;
-            font-weight: 500;
-            padding: 0.5rem 1rem;
+        to {
+            opacity: 1;
+            transform: translateY(0);
         }
+    }
+    
+    @keyframes slideInRight {
+        from {
+            opacity: 0;
+            transform: translateX(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+    
+    [data-testid="stMetricContainer"] {
+        animation: fadeIn 0.4s ease forwards;
+    }
+    
+    .stAlert {
+        animation: slideInRight 0.3s ease forwards;
+    }
+    
     </style>
 """, unsafe_allow_html=True)
 
@@ -456,38 +821,46 @@ def display_nutrition_calendar(macros):
 # ─────────────────────────────────────────────
 
 def login_page():
-    """Login page."""
+    """Professional login page with Material Design styling."""
     col1, col2, col3 = st.columns([1, 2, 1])
     
     with col2:
-        st.markdown("# 🏋️ FitLog")
-        st.markdown("*Your Personal Fitness & Nutrition Tracker*")
+        st.markdown("""
+            <div style="text-align: center; margin: 60px 0 40px 0;">
+                <h1 style="font-size: 48px; margin: 0; color: #6750a4;">💪</h1>
+                <h1 style="margin: 16px 0 8px 0; font-size: 36px; font-weight: 800; color: #111827;">FitLog</h1>
+                <p style="color: #6b7280; font-size: 16px; margin: 0;">Your Personal Fitness & Nutrition Companion</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
         st.divider()
         
-        tab1, tab2 = st.tabs(["Login", "Register"])
+        tab1, tab2 = st.tabs(["🔓 Login", "✨ Register"])
         
         with tab1:
-            st.subheader("👤 Login")
-            email = st.text_input("Email", placeholder="you@example.com", key="login_email")
+            st.subheader("Welcome Back")
+            email = st.text_input("Email Address", placeholder="you@example.com", key="login_email")
             password = st.text_input("Password", type="password", placeholder="••••••••", key="login_password")
             
-            if st.button("🔓 Login", use_container_width=True, key="login_btn"):
-                if not email or not password:
-                    st.error("⚠️ Please enter email and password")
-                else:
-                    result = api_login(email, password)
-                    if result:
-                        st.session_state.logged_in = True
-                        st.session_state.token = result.get("access_token")
-                        st.session_state.user_id = result.get("user_id")
-                        st.session_state.user_name = result.get("name")
-                        st.success(f"✅ Welcome back, {result.get('name')}!")
-                        st.rerun()
+            col_btn, col_space = st.columns([1, 3])
+            with col_btn:
+                if st.button("🚀 Sign In", use_container_width=True, key="login_btn"):
+                    if not email or not password:
+                        st.error("⚠️ Please enter email and password")
+                    else:
+                        result = api_login(email, password)
+                        if result:
+                            st.session_state.logged_in = True
+                            st.session_state.token = result.get("access_token")
+                            st.session_state.user_id = result.get("user_id")
+                            st.session_state.user_name = result.get("name")
+                            st.success(f"✅ Welcome back, {result.get('name')}!")
+                            st.rerun()
         
         with tab2:
-            st.subheader("📝 Create Account")
-            name = st.text_input("Full Name", placeholder="Alex Fitness", key="register_name")
-            email = st.text_input("Email", placeholder="you@example.com", key="register_email")
+            st.subheader("Create an Account")
+            name = st.text_input("Full Name", placeholder="Alexander Fitness", key="register_name")
+            email = st.text_input("Email Address", placeholder="you@example.com", key="register_email")
             password = st.text_input(
                 "Password",
                 type="password",
@@ -501,32 +874,48 @@ def login_page():
                 key="register_confirm"
             )
             
-            if st.button("✨ Create Account", use_container_width=True, key="register_btn"):
-                if not name or not email or not password:
-                    st.error("⚠️ Please fill in all fields")
-                elif password != password_confirm:
-                    st.error("⚠️ Passwords don't match")
-                elif len(password) < 8:
-                    st.error("⚠️ Password must be at least 8 characters")
-                else:
-                    result = api_register(email, password, name)
-                    if result:
-                        st.session_state.logged_in = True
-                        st.session_state.token = result.get("access_token")
-                        st.session_state.user_id = result.get("user_id")
-                        st.session_state.user_name = result.get("name")
-                        st.success(f"✅ Account created! Welcome, {result.get('name')}!")
-                        st.rerun()
+            col_btn, col_space = st.columns([1, 3])
+            with col_btn:
+                if st.button("✨ Get Started", use_container_width=True, key="register_btn"):
+                    if not name or not email or not password:
+                        st.error("⚠️ Please fill in all fields")
+                    elif password != password_confirm:
+                        st.error("⚠️ Passwords don't match")
+                    elif len(password) < 8:
+                        st.error("⚠️ Password must be at least 8 characters")
+                    else:
+                        result = api_register(email, password, name)
+                        if result:
+                            st.session_state.logged_in = True
+                            st.session_state.token = result.get("access_token")
+                            st.session_state.user_id = result.get("user_id")
+                            st.session_state.user_name = result.get("name")
+                            st.success(f"✅ Account created! Welcome, {result.get('name')}!")
+                            st.rerun()
 
 
 def main_app():
-    """Main application with professional layout."""
-    # Header
+    """Main application with professional Material Design layout."""
+    # Professional Header with Material Design
+    st.markdown("""
+        <div style="
+            padding: 20px 0;
+            margin-bottom: 24px;
+        ">
+    """, unsafe_allow_html=True)
+    
     header_col1, header_col2, header_col3 = st.columns([3, 1, 1], vertical_alignment="center")
     
     with header_col1:
-        st.markdown("# 🏋️ FitLog")
-        st.markdown(f"**Welcome, {st.session_state.user_name}**")
+        st.markdown("""
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 32px;">💪</span>
+                <div>
+                    <h2 style="margin: 0; color: #6750a4; font-size: 28px;">FitLog</h2>
+                    <p style="margin: 4px 0 0 0; color: #6b7280; font-size: 13px; font-weight: 500;">Welcome back, <strong>{}</strong></p>
+                </div>
+            </div>
+        """.format(st.session_state.user_name), unsafe_allow_html=True)
     
     with header_col2:
         pass  # Spacing
@@ -541,23 +930,25 @@ def main_app():
             st.success("✅ Logged out successfully!")
             st.rerun()
     
+    st.markdown("</div>", unsafe_allow_html=True)
     st.divider()
     
     # ═══════════════════════════════════════════
     # SIDEBAR - Profile & Settings
     # ═══════════════════════════════════════════
     with st.sidebar:
-        st.markdown("## 📊 Fitness Profile")
+        st.markdown("### 👤 Fitness Profile")
         st.divider()
         
         profiles = list_profiles()
         
         if profiles:
-            profile_names = [f"{p['name']} ({p['goal']})" for p in profiles]
+            profile_names = [f"{p['name']} ({p['goal'].upper()})" for p in profiles]
             selected_idx = st.selectbox(
                 "Select Profile",
                 range(len(profiles)),
                 format_func=lambda i: profile_names[i],
+                key="profile_select"
             )
             st.session_state.selected_profile_id = profiles[selected_idx]["id"]
             selected_profile = profiles[selected_idx]
@@ -566,11 +957,11 @@ def main_app():
             st.session_state.selected_profile_id = None
         
         # Settings Section in Sidebar
-        st.markdown("## ⚙️ Account Settings")
+        st.markdown("### ⚙️ Settings")
         st.divider()
         
         # Account Info
-        st.markdown("### Account Information")
+        st.markdown("**Account Information**")
         info_col1, info_col2 = st.columns(2)
         with info_col1:
             st.metric("Status", "Active ✅")
@@ -594,9 +985,9 @@ def main_app():
         with stat_col3:
             st.metric("Tracked Days", len(macros))
     
-    # Main tabs (5 tabs)
+    # Main tabs with professional icons
     tabs = st.tabs([
-        "📈 Dashboard",
+        "📊 Dashboard",
         "👤 Profile",
         "💪 Training",
         "🥗 Nutrition",
@@ -607,7 +998,7 @@ def main_app():
     # Tab 0: Dashboard
     # ─────────────────────────────────────────────
     with tabs[0]:
-        st.title("📈 Dashboard")
+        st.title("� Dashboard")
         
         if selected_profile:
             col1, col2, col3, col4 = st.columns(4)
@@ -695,7 +1086,7 @@ def main_app():
     with tabs[2]:
         st.title("🏋️ Training & Exercises")
         
-        training_tabs = st.tabs(["📚 Exercise Library", "📝 Log Workout"])
+        training_tabs = st.tabs(["🏋️ Exercise Library", "📋 Log Workout"])
         
         # ─────────────────────────────────────────────
         # Subtab 1: Exercise Library (Add & View)
@@ -932,7 +1323,7 @@ def main_app():
     with tabs[3]:
         st.title("🥗 Nutrition Tracking")
         
-        nutrition_tabs = st.tabs(["🤖 AI Analyzer", "📋 Manual Entry", "📅 Calendar Log", "📊 History"])
+        nutrition_tabs = st.tabs(["🤖 AI Analysis", "✍️ Manual Entry", "📅 Calendar", "📈 History"])
         
         # Subtab 1: AI Food Analyzer
         with nutrition_tabs[0]:
