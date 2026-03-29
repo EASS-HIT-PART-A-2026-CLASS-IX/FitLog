@@ -42,7 +42,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://fitlog:fitlog_password@postgres:5432/fitlog
       REDIS_URL: redis://redis:6379/0
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GROQ_API_KEY: ${GROQ_API_KEY}
       SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
     ports:
       - "8000:8000"
@@ -64,7 +64,7 @@ services:
     environment:
       DATABASE_URL: postgresql+asyncpg://fitlog:fitlog_password@postgres:5432/fitlog
       REDIS_URL: redis://redis:6379/0
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GROQ_API_KEY: ${GROQ_API_KEY}
     depends_on:
       - redis
       - postgres

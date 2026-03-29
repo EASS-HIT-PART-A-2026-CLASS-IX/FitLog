@@ -1,16 +1,14 @@
-"""Macro / nutrition entries CRUD router with database persistence."""
+"""Macro / nutrition entries CRUD router."""
 import os
 import json
+from uuid import UUID
+
 from dotenv import load_dotenv
-from fastapi import APIRouter, HTTPException, status, Query, Depends
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from fastapi import APIRouter, HTTPException, status, Query
 from openai import OpenAI
 
-from app.models import MacroEntryCreate, MacroEntryOut, MacroEntryUpdate, FoodAnalysisRequest, NutritionAnalysisResponse
-from app.db import MacroEntry, User
-from app.database import get_session
-from app.routers.auth import get_current_user_from_header
+from src.app.schemas import MacroEntryCreate, MacroEntryOut, MacroEntryUpdate, FoodAnalysisRequest, NutritionAnalysisResponse
+from app.repository import macros_repo
 
 load_dotenv()
 
@@ -34,7 +32,7 @@ def _get_groq_client() -> OpenAI:
 
 
 @router.post("/analyze-food", response_model=NutritionAnalysisResponse, summary="Analyze food and calculate macros using AI")
-async def analyze_food_nutrition(body: FoodAnalysisRequest):
+def analyze_food_nutrition(body: FoodAnalysisRequest):
     """
     Analyze food description using Groq AI and return estimated nutritional values.
     Takes a natural language description of food (e.g., "2 eggs, bacon, and toast")
@@ -108,97 +106,38 @@ Be as accurate as possible using standard nutrition databases. Estimates should 
         )
 
 
-@router.get("/", response_model=list[MacroEntryOut], summary="List user's macro entries")
-async def list_macros(
+
+@router.get("/", response_model=list[MacroEntryOut], summary="List all macro entries")
+def list_macros(
     limit: int = Query(100, ge=1, le=500),
-    offset: int = Query(0, ge=0),
-    current_user: User = Depends(get_current_user_from_header),
-    session: AsyncSession = Depends(get_session)
+    offset: int = Query(0, ge=0)
 ):
-    """List macros for the authenticated user with pagination."""
-    stmt = select(MacroEntry).where(MacroEntry.owner_id == current_user.id).offset(offset).limit(limit)
-    result = await session.execute(stmt)
-    return result.scalars().all()
+    """List macros with pagination. Default 100 per page, max 500."""
+    return macros_repo.list(limit=limit, offset=offset)
 
 
 @router.get("/{entry_id}", response_model=MacroEntryOut, summary="Get a macro entry by ID")
-async def get_macro(
-    entry_id: str,
-    current_user: User = Depends(get_current_user_from_header),
-    session: AsyncSession = Depends(get_session)
-):
-    """Get a specific macro entry (only if owned by user)."""
-    stmt = select(MacroEntry).where(
-        (MacroEntry.id == entry_id) & (MacroEntry.owner_id == current_user.id)
-    )
-    result = await session.execute(stmt)
-    record = result.scalars().first()
-    
+def get_macro(entry_id: UUID):
+    record = macros_repo.get(entry_id)
     if not record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Macro entry not found")
     return record
 
 
 @router.post("/", response_model=MacroEntryOut, status_code=status.HTTP_201_CREATED, summary="Log daily macros")
-async def create_macro(
-    body: MacroEntryCreate,
-    current_user: User = Depends(get_current_user_from_header),
-    session: AsyncSession = Depends(get_session)
-):
-    """Create a new macro entry for the authenticated user."""
-    entry = MacroEntry(
-        **body.model_dump(),
-        owner_id=current_user.id
-    )
-    session.add(entry)
-    await session.commit()
-    await session.refresh(entry)
-    return entry
+def create_macro(body: MacroEntryCreate):
+    return macros_repo.create(body.model_dump())
 
 
 @router.put("/{entry_id}", response_model=MacroEntryOut, summary="Update a macro entry")
-async def update_macro(
-    entry_id: str,
-    body: MacroEntryUpdate,
-    current_user: User = Depends(get_current_user_from_header),
-    session: AsyncSession = Depends(get_session)
-):
-    """Update a macro entry (only if owned by user)."""
-    stmt = select(MacroEntry).where(
-        (MacroEntry.id == entry_id) & (MacroEntry.owner_id == current_user.id)
-    )
-    result = await session.execute(stmt)
-    record = result.scalars().first()
-    
-    if not record:
+def update_macro(entry_id: UUID, body: MacroEntryUpdate):
+    updated = macros_repo.update(entry_id, body.model_dump(exclude_none=True))
+    if not updated:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Macro entry not found")
-    
-    # Update only provided fields
-    update_data = body.model_dump(exclude_none=True)
-    for key, value in update_data.items():
-        setattr(record, key, value)
-    
-    session.add(record)
-    await session.commit()
-    await session.refresh(record)
-    return record
+    return updated
 
 
 @router.delete("/{entry_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a macro entry")
-async def delete_macro(
-    entry_id: str,
-    current_user: User = Depends(get_current_user_from_header),
-    session: AsyncSession = Depends(get_session)
-):
-    """Delete a macro entry (only if owned by user)."""
-    stmt = select(MacroEntry).where(
-        (MacroEntry.id == entry_id) & (MacroEntry.owner_id == current_user.id)
-    )
-    result = await session.execute(stmt)
-    record = result.scalars().first()
-    
-    if not record:
+def delete_macro(entry_id: UUID):
+    if not macros_repo.delete(entry_id):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Macro entry not found")
-    
-    await session.delete(record)
-    await session.commit()

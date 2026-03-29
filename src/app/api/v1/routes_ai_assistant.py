@@ -16,9 +16,9 @@ from openai import OpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from app.models import ChatRequest, ChatResponse
-from app.database import get_session
-from app.db import FitnessProfile, WorkoutLog, MacroEntry
+from src.app.schemas import ChatRequest, ChatResponse
+from src.app.db.session import get_session
+from src.app.models import FitnessProfile, WorkoutLog, MacroEntry
 
 load_dotenv()
 

@@ -131,6 +131,21 @@ class MacroEntryOut(MacroEntryBase):
     id: UUID
 
 
+class FoodAnalysisRequest(BaseModel):
+    """Request to analyze food description and calculate nutrition."""
+    food_description: str = Field(..., min_length=3, max_length=500, examples=["2 eggs, bacon, and toast with butter"])
+
+
+class NutritionAnalysisResponse(BaseModel):
+    """Response with calculated nutrition from AI analysis."""
+    food_description: str
+    calories: float
+    protein_g: float
+    carbs_g: float
+    fat_g: float
+    analysis: str
+
+
 # ─────────────────────────────────────────────
 #  User Profile
 # ─────────────────────────────────────────────
@@ -180,7 +195,7 @@ class ProteinTargetOut(BaseModel):
 # ─────────────────────────────────────────────
 
 class ChatRequest(BaseModel):
-    user_id: UUID
+    profile_id: str  # Profile ID (not user ID) - FitnessProfile.id
     message: str = Field(..., min_length=1, max_length=2000)
 
 
