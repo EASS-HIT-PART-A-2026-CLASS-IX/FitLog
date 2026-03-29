@@ -467,19 +467,29 @@ if "selected_profile_id" not in st.session_state:
 if "api_client" not in st.session_state:
     st.session_state.api_client = None
 
+# AI Chatbot state
+if "chat_open" not in st.session_state:
+    st.session_state.chat_open = False
+if "chat_messages" not in st.session_state:
+    st.session_state.chat_messages = []
+
 
 def get_api_with_auth() -> httpx.Client:
     """
-    Get authenticated HTTP client with current token.
-    Creates new client each time to ensure token is always current.
+    Get authenticated HTTP client with optimal performance settings.
+    Reuses connections and enables HTTP/2 for faster requests.
     """
     token = st.session_state.get("token", "")
     headers = {"Authorization": f"Bearer {token}"} if token else {}
     return httpx.Client(
         base_url=API_BASE,
-        timeout=15.0,
+        timeout=10.0,  # Reduced timeout for faster failure detection
         headers=headers,
-        limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
+        limits=httpx.Limits(
+            max_connections=20,  # Increased connection pool
+            max_keepalive_connections=10,  # More keep-alive connections
+        ),
+        http2=True,  # Enable HTTP/2 for faster multiplexing
     )
 
 
@@ -590,11 +600,13 @@ def create_exercise(data):
 
 
 @st.cache_data(ttl=45)  # Cache for 45s (workouts change frequently)
+@st.cache_data(ttl=30)  # Cache for 30s (workouts change frequently)
 def list_workout_logs():
-    """Fetch all workout logs with 45s cache."""
+    """Fetch latest workout logs with 30s cache and pagination."""
     try:
         client = get_api_with_auth()
-        response = client.get("/logs/")
+        # Limit to 50 most recent logs for better performance
+        response = client.get("/logs/?limit=50&offset=0")
         return response.json() if response.status_code == 200 else []
     except Exception as e:
         st.warning(f"⚠️ Workouts offline: {e}")
@@ -626,6 +638,52 @@ def create_workout_log(data):
         return None
 
 
+def update_workout_log(log_id: str, data):
+    """Update a workout log and invalidate cache."""
+    try:
+        client = get_api_with_auth()
+        response = client.put(f"/logs/{log_id}", json=data)
+        
+        if response.status_code == 200:
+            list_workout_logs.clear()  # Invalidate cache
+            return response.json()
+        
+        try:
+            error_detail = response.json().get("detail", response.text)
+        except:
+            error_detail = response.text
+        
+        st.error(f"❌ API Error ({response.status_code}): {error_detail}")
+        return None
+        
+    except Exception as e:
+        st.error(f"❌ Connection Error: {str(e)}")
+        return None
+
+
+def delete_workout_log(log_id: str):
+    """Delete a workout log and invalidate cache."""
+    try:
+        client = get_api_with_auth()
+        response = client.delete(f"/logs/{log_id}")
+        
+        if response.status_code == 204:
+            list_workout_logs.clear()  # Invalidate cache
+            return True
+        
+        try:
+            error_detail = response.json().get("detail", response.text)
+        except:
+            error_detail = response.text
+        
+        st.error(f"❌ API Error ({response.status_code}): {error_detail}")
+        return False
+        
+    except Exception as e:
+        st.error(f"❌ Connection Error: {str(e)}")
+        return False
+
+
 @st.cache_data(ttl=45)  # Cache for 45s (nutrition changes often)
 def list_macros():
     """Fetch all macros with 45s cache."""
@@ -652,6 +710,52 @@ def create_macro(data):
         return None
 
 
+def update_macro(entry_id: str, data):
+    """Update a macro entry and invalidate cache."""
+    try:
+        client = get_api_with_auth()
+        response = client.put(f"/macros/{entry_id}", json=data)
+        
+        if response.status_code == 200:
+            list_macros.clear()  # Invalidate cache
+            return response.json()
+        
+        try:
+            error_detail = response.json().get("detail", response.text)
+        except:
+            error_detail = response.text
+        
+        st.error(f"❌ API Error ({response.status_code}): {error_detail}")
+        return None
+        
+    except Exception as e:
+        st.error(f"❌ Connection Error: {str(e)}")
+        return None
+
+
+def delete_macro(entry_id: str):
+    """Delete a macro entry and invalidate cache."""
+    try:
+        client = get_api_with_auth()
+        response = client.delete(f"/macros/{entry_id}")
+        
+        if response.status_code == 204:
+            list_macros.clear()  # Invalidate cache
+            return True
+        
+        try:
+            error_detail = response.json().get("detail", response.text)
+        except:
+            error_detail = response.text
+        
+        st.error(f"❌ API Error ({response.status_code}): {error_detail}")
+        return False
+        
+    except Exception as e:
+        st.error(f"❌ Connection Error: {str(e)}")
+        return False
+
+
 def chat_with_ai(profile_id: str, message: str) -> dict:
     """Chat with AI (no caching - real-time conversation)."""
     try:
@@ -669,6 +773,208 @@ def chat_with_ai(profile_id: str, message: str) -> dict:
         return {"reply": f"❌ Error: {str(e)}"}
 
 
+def floating_ai_chatbot():
+    """Large side panel FitCoach chatbot - positioned on the right."""
+    # Initialize chat state
+    if "chat_open" not in st.session_state:
+        st.session_state.chat_open = False
+    
+    # Add CSS for FitCoach styling
+    st.markdown("""
+        <style>
+        .fitcoach-toggle {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 9999;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #6750a4 0%, #7d5260 100%);
+            border: none;
+            cursor: pointer;
+            font-size: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 24px rgba(103, 80, 164, 0.4);
+            transition: all 0.3s ease;
+        }
+        .fitcoach-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 32px rgba(103, 80, 164, 0.5);
+        }
+        .fitcoach-panel {
+            background: white;
+            border-radius: 16px;
+            border: 2px solid #6750a4;
+            box-shadow: 0 10px 40px rgba(103, 80, 164, 0.25);
+            display: flex;
+            flex-direction: column;
+            height: 600px;
+            margin-top: 16px;
+        }
+        .fitcoach-panel-header {
+            background: linear-gradient(135deg, #6750a4 0%, #7d5260 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 14px 14px 0 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .fitcoach-panel-header-emoji {
+            font-size: 40px;
+        }
+        .fitcoach-panel-header-text h3 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+        }
+        .fitcoach-panel-header-text p {
+            margin: 4px 0 0 0;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        .fitcoach-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: #f9fafb;
+        }
+        .fitcoach-message-user {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 12px;
+        }
+        .fitcoach-message-user-text {
+            background: #6750a4;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 12px 12px 0 12px;
+            max-width: 85%;
+            font-size: 13px;
+            word-wrap: break-word;
+        }
+        .fitcoach-message-assistant {
+            display: flex;
+            justify-content: flex-start;
+            margin-bottom: 12px;
+        }
+        .fitcoach-message-assistant-text {
+            background: white;
+            color: #111827;
+            padding: 12px 16px;
+            border-radius: 12px 12px 12px 0;
+            border-left: 4px solid #6750a4;
+            max-width: 85%;
+            font-size: 13px;
+            word-wrap: break-word;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # Toggle button at bottom right
+    col_space, col_btn = st.columns([20, 1])
+    with col_btn:
+        if st.button("🏋️", key="fitcoach_toggle", help="Chat with FitCoach"):
+            st.session_state.chat_open = not st.session_state.chat_open
+            st.rerun()
+    
+    # Show side panel when open
+    if st.session_state.chat_open:
+        st.markdown("<div class='fitcoach-panel'>", unsafe_allow_html=True)
+        
+        # Header
+        st.markdown("""
+            <div class="fitcoach-panel-header">
+                <div class="fitcoach-panel-header-emoji">🏋️‍♂️</div>
+                <div class="fitcoach-panel-header-text">
+                    <h3>FitCoach</h3>
+                    <p>Your Personal AI Fitness Trainer</p>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        # Chat messages area
+        if st.session_state.get("selected_profile_id"):
+            st.markdown("<div class='fitcoach-messages'>", unsafe_allow_html=True)
+            
+            # Display welcome message
+            if not st.session_state.get("chat_messages"):
+                st.markdown("""
+                    <div style="text-align: center; padding: 12px 0;">
+                        <p style="font-size: 13px; color: #6b7280; margin: 0;">
+                            <strong style="color: #6750a4;">💡 Welcome to FitCoach!</strong><br>
+                            Your personal AI fitness trainer is ready to help. Ask me about workouts, nutrition, progress, and more!
+                        </p>
+                    </div>
+                """, unsafe_allow_html=True)
+            
+            # Display chat history
+            for msg in st.session_state.get("chat_messages", []):
+                if msg["role"] == "user":
+                    st.markdown(f"""
+                        <div class="fitcoach-message-user">
+                            <div class="fitcoach-message-user-text">{msg['content']}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                        <div class="fitcoach-message-assistant">
+                            <div class="fitcoach-message-assistant-text">{msg['content']}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+            
+            st.markdown("</div>", unsafe_allow_html=True)
+            
+            # Input area
+            st.divider()
+            col_input, col_send = st.columns([4, 1])
+            
+            with col_input:
+                chat_input = st.text_input(
+                    "Ask FitCoach...",
+                    placeholder="e.g., protein goal? best exercises?",
+                    key="fitcoach_input_main",
+                    label_visibility="collapsed"
+                )
+            
+            with col_send:
+                send_clicked = st.button("➤", key="fitcoach_send_main", help="Send message")
+            
+            if send_clicked and chat_input:
+                # Add user message
+                if "chat_messages" not in st.session_state:
+                    st.session_state.chat_messages = []
+                
+                st.session_state.chat_messages.append({
+                    "role": "user",
+                    "content": chat_input
+                })
+                
+                # Get AI response
+                with st.spinner("🏋️ FitCoach is analyzing..."):
+                    response = chat_with_ai(str(st.session_state.selected_profile_id), chat_input)
+                
+                # Add assistant message
+                st.session_state.chat_messages.append({
+                    "role": "assistant",
+                    "content": response.get("reply", "Sorry, I couldn't process that.")
+                })
+                
+                st.rerun()
+        else:
+            st.warning("⚠️ **Select a fitness profile first** to chat with FitCoach!")
+        
+        # Close button
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            if st.button("Close Panel ✕", use_container_width=True, key="close_fitcoach_panel"):
+                st.session_state.chat_open = False
+                st.rerun()
+        
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────
@@ -838,7 +1144,20 @@ def login_page():
     with col2:
         st.markdown("""
             <div style="text-align: center; margin: 60px 0 40px 0;">
-                <h1 style="font-size: 48px; margin: 0; color: #6750a4;">💪</h1>
+                <div style="
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 88px;
+                    height: 88px;
+                    background: linear-gradient(135deg, #6750a4 0%, #7d5260 100%);
+                    border-radius: 16px;
+                    font-size: 48px;
+                    box-shadow: 0 8px 24px rgba(103, 80, 164, 0.3);
+                    margin: 0 auto 24px auto;
+                ">
+                    💪📊
+                </div>
                 <h1 style="margin: 16px 0 8px 0; font-size: 36px; font-weight: 800; color: #111827;">FitLog</h1>
                 <p style="color: #6b7280; font-size: 16px; margin: 0;">Your Personal Fitness & Nutrition Companion</p>
             </div>
@@ -910,36 +1229,51 @@ def main_app():
     # Professional Header with Material Design
     st.markdown("""
         <div style="
-            padding: 20px 0;
-            margin-bottom: 24px;
+            padding: 16px 0 20px 0;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
+            border-radius: 12px;
+            position: relative;
         ">
     """, unsafe_allow_html=True)
     
-    header_col1, header_col2, header_col3 = st.columns([3, 1, 1], vertical_alignment="center")
+    header_col1, header_col2 = st.columns([2, 1], vertical_alignment="center")
     
     with header_col1:
         st.markdown("""
-            <div style="display: flex; align-items: center; gap: 12px;">
-                <span style="font-size: 32px;">💪</span>
+            <div style="display: flex; align-items: center; gap: 16px; padding: 0 12px;">
+                <div style="
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 56px;
+                    height: 56px;
+                    background: linear-gradient(135deg, #6750a4 0%, #7d5260 100%);
+                    border-radius: 12px;
+                    font-size: 32px;
+                    box-shadow: 0 4px 12px rgba(103, 80, 164, 0.25);
+                ">
+                    💪📊
+                </div>
                 <div>
-                    <h2 style="margin: 0; color: #6750a4; font-size: 28px;">FitLog</h2>
-                    <p style="margin: 4px 0 0 0; color: #6b7280; font-size: 13px; font-weight: 500;">Welcome back, <strong>{}</strong></p>
+                    <h1 style="margin: 0; color: #6750a4; font-size: 32px; font-weight: 800;">FitLog</h1>
+                    <p style="margin: 8px 0 0 0; color: #6b7280; font-size: 15px; font-weight: 500;">Welcome back, <strong style="color: #6750a4;">{}</strong></p>
                 </div>
             </div>
         """.format(st.session_state.user_name), unsafe_allow_html=True)
     
     with header_col2:
-        pass  # Spacing
-    
-    with header_col3:
-        if st.button("🚪 Logout", use_container_width=True, key="logout_top"):
-            st.session_state.logged_in = False
-            st.session_state.token = None
-            st.session_state.user_id = None
-            st.session_state.user_name = None
-            st.session_state.selected_profile_id = None
-            st.success("✅ Logged out successfully!")
-            st.rerun()
+        # Compact Logout button in top right
+        col_space, col_logout = st.columns([3, 1])
+        with col_logout:
+            if st.button("🚪", key="logout_top", help="Logout"):
+                st.session_state.logged_in = False
+                st.session_state.token = None
+                st.session_state.user_id = None
+                st.session_state.user_name = None
+                st.session_state.selected_profile_id = None
+                st.success("✅ Logged out successfully!")
+                st.rerun()
     
     st.markdown("</div>", unsafe_allow_html=True)
     st.divider()
@@ -948,6 +1282,26 @@ def main_app():
     # SIDEBAR - Profile & Settings
     # ═══════════════════════════════════════════
     with st.sidebar:
+        # Logo in Sidebar
+        st.markdown("""
+            <div style="text-align: center; padding: 12px 0 20px 0;">
+                <div style="
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 60px;
+                    height: 60px;
+                    background: linear-gradient(135deg, #6750a4 0%, #7d5260 100%);
+                    border-radius: 14px;
+                    font-size: 36px;
+                    box-shadow: 0 4px 12px rgba(103, 80, 164, 0.25);
+                    margin: 0 auto;
+                ">
+                    💪📊
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        
         st.markdown("### 👤 Fitness Profile")
         st.divider()
         
@@ -967,34 +1321,32 @@ def main_app():
             selected_profile = None
             st.session_state.selected_profile_id = None
         
-        # Settings Section in Sidebar
-        st.markdown("### ⚙️ Settings")
-        st.divider()
-        
-        # Account Info
-        st.markdown("**Account Information**")
-        info_col1, info_col2 = st.columns(2)
-        with info_col1:
-            st.metric("Status", "Active ✅")
-        with info_col2:
-            st.metric("Profiles", len(profiles) if profiles else 0)
-        
-        st.markdown("### Security")
-        st.info("🔒 Your account is protected with PBKDF2 password hashing and JWT tokens")
-        
-        # Quick stats
-        st.markdown("### Your Statistics")
-        exercises = list_exercises()
-        logs = list_workout_logs()
-        macros = list_macros()
-        
-        stat_col1, stat_col2, stat_col3 = st.columns(3)
-        with stat_col1:
-            st.metric("Exercises", len(exercises))
-        with stat_col2:
-            st.metric("Workouts", len(logs))
-        with stat_col3:
-            st.metric("Tracked Days", len(macros))
+        # Settings Section in Sidebar - Collapsible
+        with st.expander("⚙️ Settings", expanded=False):
+            # Account Info
+            st.markdown("**Account Information**")
+            info_col1, info_col2 = st.columns(2)
+            with info_col1:
+                st.metric("Status", "Active ✅")
+            with info_col2:
+                st.metric("Profiles", len(profiles) if profiles else 0)
+            
+            st.markdown("### Security")
+            st.info("🔒 Your account is protected with PBKDF2 password hashing and JWT tokens")
+            
+            # Quick stats
+            st.markdown("### Your Statistics")
+            exercises = list_exercises()
+            logs = list_workout_logs()
+            macros = list_macros()
+            
+            stat_col1, stat_col2, stat_col3 = st.columns(3)
+            with stat_col1:
+                st.metric("Exercises", len(exercises))
+            with stat_col2:
+                st.metric("Workouts", len(logs))
+            with stat_col3:
+                st.metric("Tracked Days", len(macros))
     
     # Main tabs with professional icons
     tabs = st.tabs([
@@ -1002,7 +1354,6 @@ def main_app():
         "👤 Profile",
         "💪 Training",
         "🥗 Nutrition",
-        "🤖 AI Coach",
     ])
     
     # ─────────────────────────────────────────────
@@ -1097,7 +1448,7 @@ def main_app():
     with tabs[2]:
         st.title("🏋️ Training & Exercises")
         
-        training_tabs = st.tabs(["🏋️ Exercise Library", "📋 Log Workout"])
+        training_tabs = st.tabs(["🏋️ Exercise Library", "📋 Log Workout", "📅 Calendar"])
         
         # ─────────────────────────────────────────────
         # Subtab 1: Exercise Library (Add & View)
@@ -1321,7 +1672,7 @@ def main_app():
                     logs_on_date = grouped_by_date[log_date_str]
                     with st.expander(f"📅 **{log_date_str}** ({len(logs_on_date)} workout{'s' if len(logs_on_date) > 1 else ''})"):
                         for log in logs_on_date:
-                            col1, col2, col3 = st.columns([2, 2, 1])
+                            col1, col2, col3, col_edit, col_delete = st.columns([2, 2, 0.5, 0.5, 0.5])
                             with col1:
                                 st.write(f"💪 {log.get('exercise_name', 'Exercise')}")
                             with col2:
@@ -1329,8 +1680,133 @@ def main_app():
                             with col3:
                                 if log.get('notes'):
                                     st.caption(f"📝 {log['notes'][:30]}...")
+                            
+                            with col_edit:
+                                if st.button("✏️", key=f"edit_log_{log['id']}", help="Edit workout"):
+                                    st.session_state.editing_log_id = log['id']
+                                    st.session_state.editing_log = log
+                                    st.rerun()
+                            
+                            with col_delete:
+                                if st.button("🗑️", key=f"delete_log_{log['id']}", help="Delete workout"):
+                                    if delete_workout_log(log['id']):
+                                        st.success("✅ Workout deleted!")
+                                        st.rerun()
+                
+                # Edit workout modal
+                if st.session_state.get("editing_log_id"):
+                    st.divider()
+                    st.subheader("✏️ Edit Workout")
+                    
+                    editing_log = st.session_state.get("editing_log", {})
+                    log_id = st.session_state.get("editing_log_id")
+                    
+                    # Get exercises list
+                    user_exercises = list_exercises()
+                    exercise_names = {f"{ex['name']} ({ex['muscle_group']})" : ex for ex in user_exercises}
+                    
+                    # Pre-select current exercise
+                    current_exercise_name = None
+                    for name, ex in exercise_names.items():
+                        if ex['id'] == editing_log.get('exercise_id'):
+                            current_exercise_name = name
+                            break
+                    
+                    current_index = list(exercise_names.keys()).index(current_exercise_name) if current_exercise_name else 0
+                    
+                    with st.form("edit_workout_form"):
+                        # Exercise selection
+                        selected_display = st.selectbox(
+                            "Exercise",
+                            list(exercise_names.keys()),
+                            index=current_index,
+                            key="edit_exercise_select"
+                        )
+                        
+                        # Date
+                        edit_log_date = st.date_input(
+                            "Date",
+                            value=editing_log.get('log_date', log_date_str),
+                            key="edit_log_date_input"
+                        )
+                        
+                        # Performance metrics
+                        col1, col2, col3 = st.columns(3)
+                        
+                        with col1:
+                            edit_sets = st.number_input(
+                                "Sets",
+                                min_value=1,
+                                max_value=100,
+                                value=int(editing_log.get('sets', 3)),
+                                key="edit_sets_input"
+                            )
+                        
+                        with col2:
+                            edit_reps = st.number_input(
+                                "Reps",
+                                min_value=1,
+                                max_value=1000,
+                                value=int(editing_log.get('reps', 8)),
+                                key="edit_reps_input"
+                            )
+                        
+                        with col3:
+                            edit_weight = st.number_input(
+                                "Weight (kg)",
+                                min_value=0.0,
+                                max_value=1000.0,
+                                value=float(editing_log.get('weight_kg', 50.0)),
+                                step=2.5,
+                                key="edit_weight_input"
+                            )
+                        
+                        # Notes
+                        edit_notes = st.text_area(
+                            "Notes (optional)",
+                            value=editing_log.get('notes', ''),
+                            key="edit_notes_input"
+                        )
+                        
+                        col_save, col_cancel = st.columns(2)
+                        
+                        with col_save:
+                            if st.form_submit_button("💾 Save Changes", use_container_width=True):
+                                edit_exercise = exercise_names[selected_display]
+                                
+                                update_data = {
+                                    "exercise_id": str(edit_exercise['id']),
+                                    "log_date": str(edit_log_date),
+                                    "sets": int(edit_sets),
+                                    "reps": int(edit_reps),
+                                    "weight_kg": float(edit_weight),
+                                    "notes": edit_notes.strip() if edit_notes.strip() else None,
+                                }
+                                
+                                with st.spinner("📤 Saving changes..."):
+                                    result = update_workout_log(log_id, update_data)
+                                
+                                if result:
+                                    st.success("✅ Workout updated!")
+                                    st.session_state.editing_log_id = None
+                                    st.session_state.editing_log = None
+                                    st.rerun()
+                        
+                        with col_cancel:
+                            if st.form_submit_button("❌ Cancel", use_container_width=True):
+                                st.session_state.editing_log_id = None
+                                st.session_state.editing_log = None
+                                st.rerun()
             else:
                 st.info("🏋️ No workouts logged yet. Start by logging your first workout!")
+        
+        # ─────────────────────────────────────────────
+        # Subtab 3: Workout Calendar
+        # ─────────────────────────────────────────────
+        with training_tabs[2]:
+            st.subheader("📅 Workout Calendar")
+            logs = list_workout_logs()
+            display_workout_calendar(logs)
     
     # ─────────────────────────────────────────────
     # Tab 3: Nutrition (with AI Food Analyzer)
@@ -1455,13 +1931,120 @@ def main_app():
         with nutrition_tabs[3]:
             st.subheader("📊 Nutrition History")
             macros = list_macros()
+            
             if macros:
                 for m in reversed(macros[-7:]):
-                    st.metric(
-                        f"📅 {m['entry_date']}",
-                        f"{m['calories']:.0f} kcal",
-                        delta=f"P:{m['protein_g']:.1f}g | C:{m['carbs_g']:.1f}g | F:{m['fat_g']:.1f}g"
-                    )
+                    col1, col2, col3, col_edit, col_delete = st.columns([3, 2, 0.5, 0.5, 0.5])
+                    
+                    with col1:
+                        st.metric(
+                            f"📅 {m['entry_date']}",
+                            f"{m['calories']:.0f} kcal"
+                        )
+                    
+                    with col2:
+                        st.caption(f"P:{m['protein_g']:.1f}g | C:{m['carbs_g']:.1f}g | F:{m['fat_g']:.1f}g")
+                        if m.get('notes'):
+                            st.caption(f"📝 {m['notes'][:40]}...")
+                    
+                    with col_edit:
+                        if st.button("✏️", key=f"edit_macro_{m['id']}", help="Edit nutrition"):
+                            st.session_state.editing_macro_id = m['id']
+                            st.session_state.editing_macro = m
+                            st.rerun()
+                    
+                    with col_delete:
+                        if st.button("🗑️", key=f"delete_macro_{m['id']}", help="Delete nutrition"):
+                            if delete_macro(m['id']):
+                                st.success("✅ Nutrition entry deleted!")
+                                st.rerun()
+                
+                # Edit nutrition modal
+                if st.session_state.get("editing_macro_id"):
+                    st.divider()
+                    st.subheader("✏️ Edit Nutrition Entry")
+                    
+                    editing_macro = st.session_state.get("editing_macro", {})
+                    macro_id = st.session_state.get("editing_macro_id")
+                    
+                    with st.form("edit_macro_form"):
+                        edit_macro_date = st.date_input(
+                            "Date",
+                            value=editing_macro.get('entry_date', date.today()),
+                            key="edit_macro_date_input"
+                        )
+                        
+                        col1, col2, col3, col4 = st.columns(4)
+                        
+                        with col1:
+                            edit_calories = st.number_input(
+                                "Calories",
+                                min_value=0,
+                                max_value=20000,
+                                value=int(editing_macro.get('calories', 2200)),
+                                key="edit_calories_input"
+                            )
+                        
+                        with col2:
+                            edit_protein = st.number_input(
+                                "Protein (g)",
+                                min_value=0,
+                                max_value=1000,
+                                value=float(editing_macro.get('protein_g', 180)),
+                                key="edit_protein_input"
+                            )
+                        
+                        with col3:
+                            edit_carbs = st.number_input(
+                                "Carbs (g)",
+                                min_value=0,
+                                max_value=2000,
+                                value=float(editing_macro.get('carbs_g', 250)),
+                                key="edit_carbs_input"
+                            )
+                        
+                        with col4:
+                            edit_fat = st.number_input(
+                                "Fat (g)",
+                                min_value=0,
+                                max_value=1000,
+                                value=float(editing_macro.get('fat_g', 70)),
+                                key="edit_fat_input"
+                            )
+                        
+                        edit_notes = st.text_area(
+                            "Notes (optional)",
+                            value=editing_macro.get('notes', ''),
+                            key="edit_notes_macro_input"
+                        )
+                        
+                        col_save, col_cancel = st.columns(2)
+                        
+                        with col_save:
+                            if st.form_submit_button("💾 Save Changes", use_container_width=True):
+                                update_data = {
+                                    "entry_date": str(edit_macro_date),
+                                    "calories": float(edit_calories),
+                                    "protein_g": float(edit_protein),
+                                    "carbs_g": float(edit_carbs),
+                                    "fat_g": float(edit_fat),
+                                    "notes": edit_notes.strip() if edit_notes.strip() else None,
+                                }
+                                
+                                with st.spinner("📤 Saving changes..."):
+                                    result = update_macro(macro_id, update_data)
+                                
+                                if result:
+                                    st.success("✅ Nutrition entry updated!")
+                                    st.session_state.editing_macro_id = None
+                                    st.session_state.editing_macro = None
+                                    st.rerun()
+                        
+                        with col_cancel:
+                            if st.form_submit_button("❌ Cancel", use_container_width=True):
+                                st.session_state.editing_macro_id = None
+                                st.session_state.editing_macro = None
+                                st.rerun()
             else:
                 st.info("No nutrition logged yet.")
             
@@ -1508,66 +2091,27 @@ def main_app():
                         st.success(f"🎉 **Great job! You're meeting your protein goal!** ({avg_protein:.1f}g ≥ {total_daily_target}g)")
                         st.success("Keep up this consistency to reach your fitness goals!")
     
-    # ─────────────────────────────────────────────
-    # Tab 4: AI Coach
-    # ─────────────────────────────────────────────
-    with tabs[4]:
-        st.title("🤖 AI Fitness Coach")
-        st.markdown("Get personalized fitness advice from our Gemini AI coach")
-        
-        if selected_profile:
-            col1, col2 = st.columns([3, 1])
-            
-            with col1:
-                message = st.text_area(
-                    "💬 Ask me anything",
-                    placeholder="e.g., How much protein should I eat? What exercises for my goal?",
-                    height=100,
-                    key="ai_msg"
-                )
-            
-            with col2:
-                st.write("")
-                st.write("")
-                send_btn = st.button("🚀 Send", use_container_width=True, key="ai_btn")
-            
-            if send_btn and message.strip():
-                if not st.session_state.selected_profile_id:
-                    st.error("⚠️ Please select a fitness profile first!")
-                else:
-                    with st.spinner("🤖 AI is thinking..."):
-                        response = chat_with_ai(str(st.session_state.selected_profile_id), message)
-                st.divider()
-                st.info(f"**🤖 Coach Response:**\n\n{response.get('reply', 'No response')}")
-            elif send_btn:
-                st.warning("⚠️ Type a message!")
-            
-            st.divider()
-            st.subheader("💡 Ask Common Questions")
-            
-            col1, col2, col3 = st.columns(3)
-            
-            quick_questions = [
-                ("🥩 Protein Target", "How much protein should I eat daily?"),
-                ("💪 Exercise Tips", "What exercises should I focus on for my goal?"),
-                ("📈 Progress Check", "How is my progress going?"),
-            ]
-            
-            for i, (btn_label, question) in enumerate(quick_questions):
-                with [col1, col2, col3][i]:
-                    if st.button(btn_label, use_container_width=True, key=f"quick_{i}"):
-                        with st.spinner("🤖"):
-                            r = chat_with_ai(str(st.session_state.selected_profile_id), question)
-                        st.info(r.get("reply"))
-        else:
-            st.warning("⚠️ Create a profile first!")
-    
     # Footer
     st.divider()
     st.markdown("""
-        <div style="text-align: center; margin-top: 3rem;">
-            <p><strong>🏋️ FitLog v2.0</strong> | Professional Fitness & Nutrition Tracking</p>
-            <p style="font-size: 0.85rem; color: #666;">
+        <div style="text-align: center; margin-top: 3rem; padding: 2rem 0;">
+            <div style="
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 56px;
+                height: 56px;
+                background: linear-gradient(135deg, #6750a4 0%, #7d5260 100%);
+                border-radius: 12px;
+                font-size: 32px;
+                box-shadow: 0 4px 12px rgba(103, 80, 164, 0.25);
+                margin: 0 auto 16px auto;
+            ">
+                💪📊
+            </div>
+            <p style="font-size: 16px; font-weight: 600; color: #111827; margin: 0;"><strong>FitLog v2.0</strong></p>
+            <p style="font-size: 13px; color: #6b7280; margin: 8px 0 0 0;">Professional Fitness & Nutrition Tracking</p>
+            <p style="font-size: 0.85rem; color: #999; margin-top: 16px;">
                 Powered by FastAPI • Streamlit • Groq AI
             </p>
         </div>
@@ -1578,17 +2122,22 @@ def main_app():
 # App Entry Point (Fixed for Streamlit)
 # ─────────────────────────────────────────────
 
-# CRITICAL: This check must be at the END and use proper Streamlit flow
+# CRITICAL: This check must use proper Streamlit flow
 # (Doesn't rely on __name__ which behaves differently in Streamlit)
 
+# Explicit token and logged_in check
+_is_authenticated = (
+    st.session_state.get("logged_in") is True and 
+    st.session_state.get("token") is not None and 
+    len(st.session_state.get("token", "")) > 0
+)
+
 # Check authentication state and show appropriate page
-if st.session_state.logged_in and st.session_state.token:
+if _is_authenticated:
     # User is authenticated - show main app
     main_app()
-    # Exit early to prevent login_page from running
-    st.stop()
+    # Display floating AI chatbot
+    floating_ai_chatbot()
 else:
     # User is not authenticated - show login/register
     login_page()
-    # Exit early to prevent main_app from running
-    st.stop()
