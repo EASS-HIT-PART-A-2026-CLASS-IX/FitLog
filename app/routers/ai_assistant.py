@@ -5,63 +5,101 @@ and returns a personalised fitness/nutrition reply.
 Uses the Groq API (OpenAI-compatible interface).
 Groq provides faster inference and much higher free tier quotas than Gemini.
 """
+
 from __future__ import annotations
 
-import os
-from datetime import datetime
+import time
+from typing import Optional
 
-from dotenv import load_dotenv
-from fastapi import APIRouter, HTTPException, status, Depends
-from openai import OpenAI
+import logging
+
+from fastapi import APIRouter, status, Depends
+from app.exceptions import NotFoundError, ExternalServiceError
+from openai import AsyncOpenAI, RateLimitError, APITimeoutError, APIStatusError
+
+logger = logging.getLogger(__name__)
+from sqlalchemy import desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.models import ChatRequest, ChatResponse
 from app.database import get_session
-from app.db import FitnessProfile, WorkoutLog, MacroEntry
-
-load_dotenv()
+from app.db import FitnessProfile, WorkoutLog, MacroEntry, User
+from app.routers.auth import get_current_user_from_header
 
 router = APIRouter(prefix="/ai", tags=["AI Assistant"])
 
-# Groq Production Models: https://console.groq.com/docs/models
-# llama-3.3-70b-versatile: 280 T/sec, balanced capability and speed
-_GROQ_MODEL = "llama-3.3-70b-versatile"
+from app.config import settings
+
+_GROQ_MODEL = settings.groq_model
+
+# ---------------------------------------------------------------------------
+# In-memory context cache: avoids repeated DB round-trips within a 5-minute
+# window for the same user.  Stored as {profile_id: (context_str, expires_at)}
+# ---------------------------------------------------------------------------
+_CONTEXT_CACHE: dict[str, tuple[str, float]] = {}
+_CONTEXT_TTL_SECONDS = 300  # 5 minutes
 
 
-def _get_client() -> OpenAI:
-    """Get Groq client configured to use Groq API endpoint."""
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="GROQ_API_KEY not configured. Set it in your .env file.",
-        )
-    return OpenAI(
-        api_key=api_key,
-        base_url="https://api.groq.com/openai/v1"
+def _get_cached_context(profile_id: str) -> Optional[str]:
+    """Return cached context string if it exists and has not expired."""
+    entry = _CONTEXT_CACHE.get(profile_id)
+    if entry is None:
+        return None
+    context, expires_at = entry
+    if time.monotonic() > expires_at:
+        del _CONTEXT_CACHE[profile_id]
+        return None
+    return context
+
+
+def _set_cached_context(profile_id: str, context: str) -> None:
+    """Store context string in the in-memory cache with a TTL."""
+    _CONTEXT_CACHE[profile_id] = (context, time.monotonic() + _CONTEXT_TTL_SECONDS)
+
+
+_groq_client: AsyncOpenAI | None = None
+
+def _get_client() -> AsyncOpenAI:
+    global _groq_client
+    if _groq_client is None:
+        _groq_client = AsyncOpenAI(api_key=settings.groq_api_key, base_url="https://api.groq.com/openai/v1")
+    return _groq_client
+
+
+async def _fetch_recent_workouts(user_id: str, session: AsyncSession) -> list:
+    """Fetch the 5 most recent workout logs for a user."""
+    stmt = (
+        select(WorkoutLog)
+        .where(WorkoutLog.owner_id == user_id)
+        .order_by(desc(WorkoutLog.created_at))
+        .limit(5)
     )
+    result = await session.execute(stmt)
+    return result.scalars().all()
 
 
-async def _build_context(profile_id: str, session: AsyncSession) -> str:
+async def _fetch_recent_macros(user_id: str, session: AsyncSession) -> list:
+    """Fetch the 3 most recent macro entries for a user."""
+    stmt = (
+        select(MacroEntry)
+        .where(MacroEntry.owner_id == user_id)
+        .order_by(desc(MacroEntry.created_at))
+        .limit(3)
+    )
+    result = await session.execute(stmt)
+    return result.scalars().all()
+
+
+async def _build_context(profile: FitnessProfile, session: AsyncSession) -> str:
     """Build a rich context string from the user's stored data."""
-    # Get the profile
-    stmt = select(FitnessProfile).where(FitnessProfile.id == profile_id)
-    result = await session.execute(stmt)
-    profile = result.scalars().first()
-    
-    if not profile:
-        return "No fitness profile found."
+    cached = _get_cached_context(profile.id)
+    if cached is not None:
+        return cached
 
-    # Get recent workout logs for this user
-    stmt = select(WorkoutLog).where(WorkoutLog.owner_id == profile.user_id).order_by(WorkoutLog.created_at.desc()).limit(5)
-    result = await session.execute(stmt)
-    recent_logs = result.scalars().all()
-
-    # Get recent macro entries for this user
-    stmt = select(MacroEntry).where(MacroEntry.owner_id == profile.user_id).order_by(MacroEntry.created_at.desc()).limit(3)
-    result = await session.execute(stmt)
-    recent_macros = result.scalars().all()
+    # Sequential fetch — AsyncSession is not safe for concurrent coroutines
+    recent_logs = await _fetch_recent_workouts(profile.user_id, session)
+    recent_macros = await _fetch_recent_macros(profile.user_id, session)
 
     ctx_lines: list[str] = [
         "=== USER FITNESS PROFILE ===",
@@ -88,7 +126,9 @@ async def _build_context(profile_id: str, session: AsyncSession) -> str:
                 f"P:{m.protein_g}g C:{m.carbs_g}g F:{m.fat_g}g"
             )
 
-    return "\n".join(ctx_lines)
+    context = "\n".join(ctx_lines)
+    _set_cached_context(profile.id, context)
+    return context
 
 
 _SYSTEM_INSTRUCTION = """You are FitLog AI, a knowledgeable and encouraging senior fitness advisor.
@@ -109,43 +149,47 @@ Never recommend unsafe practices. Always remind users to consult a doctor for me
 )
 async def chat(
     body: ChatRequest,
+    current_user: User = Depends(get_current_user_from_header),
     session: AsyncSession = Depends(get_session),
 ) -> ChatResponse:
-    # Check if profile exists
-    stmt = select(FitnessProfile).where(FitnessProfile.id == body.profile_id)
+    # Check if profile exists and belongs to current user
+    stmt = select(FitnessProfile).where(
+        (FitnessProfile.id == body.profile_id)
+        & (FitnessProfile.user_id == current_user.id)
+    )
     result = await session.execute(stmt)
     profile = result.scalars().first()
-    
-    if not profile:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Fitness profile not found. Create a profile first at POST /profile.",
-        )
 
-    context = await _build_context(body.profile_id, session)
+    if not profile:
+        raise NotFoundError("Fitness profile not found. Create a profile first at POST /profile.")
+
+    # Pass the already-fetched profile object to avoid a redundant DB query
+    context = await _build_context(profile, session)
     full_message = f"{context}\n\n=== USER QUESTION ===\n{body.message}"
 
     client = _get_client()
     try:
-        response = client.chat.completions.create(
+        response = await client.chat.completions.create(
             model=_GROQ_MODEL,
             messages=[
-                {
-                    "role": "system",
-                    "content": _SYSTEM_INSTRUCTION
-                },
-                {
-                    "role": "user",
-                    "content": full_message
-                }
+                {"role": "system", "content": _SYSTEM_INSTRUCTION},
+                {"role": "user", "content": full_message},
             ],
             temperature=0.7,
             max_tokens=500,
         )
         reply = response.choices[0].message.content
-        return ChatResponse(reply=reply)
+        return ChatResponse(reply=reply or "")
+    except ExternalServiceError:
+        raise
+    except RateLimitError:
+        logger.warning("Groq rate limit hit for user %s", current_user.id)
+        raise ExternalServiceError("AI is rate-limited — wait a moment and try again.")
+    except APITimeoutError:
+        raise ExternalServiceError("AI took too long to respond — please try again.")
+    except APIStatusError as exc:
+        logger.error("Groq API error %s for user %s", exc.status_code, current_user.id)
+        raise ExternalServiceError(f"AI service error ({exc.status_code}) — please try again.")
     except Exception as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=f"Groq API error: {exc}",
-        ) from exc
+        logger.exception("Groq API call failed for user %s", current_user.id)
+        raise ExternalServiceError("AI assistant is temporarily unavailable. Please try again later.") from exc

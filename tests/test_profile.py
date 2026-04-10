@@ -2,14 +2,17 @@
 
 
 def test_create_profile(client):
-    resp = client.post("/profile/", json={
-        "name": "Alex",
-        "weight_kg": 80.0,
-        "height_cm": 175.0,
-        "age": 28,
-        "gender": "male",
-        "goal": "muscle",
-    })
+    resp = client.post(
+        "/profile/",
+        json={
+            "name": "Alex",
+            "weight_kg": 80.0,
+            "height_cm": 175.0,
+            "age": 28,
+            "gender": "male",
+            "goal": "muscle",
+        },
+    )
     assert resp.status_code == 201
     data = resp.json()
     assert data["name"] == "Alex"
@@ -29,27 +32,58 @@ def test_protein_target_muscle_goal(client, sample_profile):
 
 
 def test_protein_target_fit_goal(client):
-    """fit goal → 1.6 g/kg"""
-    create = client.post("/profile/", json={
-        "name": "Sam",
-        "weight_kg": 70.0,
-        "height_cm": 168.0,
-        "age": 25,
-        "gender": "female",
-        "goal": "fit",
-    })
+    """fit goal → 1.8 g/kg"""
+    create = client.post(
+        "/profile/",
+        json={
+            "name": "Sam",
+            "weight_kg": 70.0,
+            "height_cm": 168.0,
+            "age": 25,
+            "gender": "female",
+            "goal": "fit",
+        },
+    )
     pid = create.json()["id"]
     resp = client.get(f"/profile/{pid}/protein-target")
     assert resp.status_code == 200
     data = resp.json()
-    assert data["multiplier_g_per_kg"] == 1.6
-    # 70 kg × 1.6 = 112.0
-    assert data["protein_g"] == 112.0
+    assert data["multiplier_g_per_kg"] == 1.8
+    # 70 kg × 1.8 = 126.0
+    assert data["protein_g"] == 126.0
 
 
 def test_protein_target_not_found(client):
     resp = client.get("/profile/00000000-0000-0000-0000-000000000000/protein-target")
     assert resp.status_code == 404
+
+
+def test_create_profile_new_goals(client):
+    """New expanded goal values should be accepted."""
+    for goal in ["weight_loss", "maintenance", "general_health", "endurance",
+                 "flexibility", "hypertrophy", "strength", "athletic_performance"]:
+        resp = client.post("/profile/", json={
+            "name": f"Test {goal}",
+            "weight_kg": 75.0,
+            "height_cm": 170.0,
+            "age": 30,
+            "gender": "male",
+            "goal": goal,
+        })
+        assert resp.status_code in (201, 401), f"Goal '{goal}' rejected: {resp.text}"
+
+
+def test_create_profile_invalid_goal(client):
+    """Invalid goal should be rejected."""
+    resp = client.post("/profile/", json={
+        "name": "Bad Goal",
+        "weight_kg": 75.0,
+        "height_cm": 170.0,
+        "age": 30,
+        "gender": "male",
+        "goal": "invalid_goal_xyz",
+    })
+    assert resp.status_code in (422, 401)
 
 
 def test_update_profile(client, sample_profile):

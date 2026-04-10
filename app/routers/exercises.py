@@ -1,5 +1,6 @@
 """Exercises CRUD router with database persistence."""
-from fastapi import APIRouter, HTTPException, status, Query, Depends
+from fastapi import APIRouter, status, Query, Depends
+from app.exceptions import NotFoundError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -38,7 +39,7 @@ async def get_exercise(
     record = result.scalars().first()
     
     if not record:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
+        raise NotFoundError("Exercise not found")
     return record
 
 
@@ -74,7 +75,7 @@ async def update_exercise(
     record = result.scalars().first()
     
     if not record:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
+        raise NotFoundError("Exercise not found")
     
     # Update only provided fields
     update_data = body.model_dump(exclude_none=True)
@@ -101,7 +102,7 @@ async def delete_exercise(
     record = result.scalars().first()
     
     if not record:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Exercise not found")
+        raise NotFoundError("Exercise not found")
     
     await session.delete(record)
     await session.commit()

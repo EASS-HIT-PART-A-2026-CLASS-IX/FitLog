@@ -1,75 +1,90 @@
 """
 Security utilities for FitLog.
-- Password hashing with PBKDF2  
+- Password hashing with bcrypt (with legacy PBKDF2 support)
 - JWT token generation and validation
-- Role-based access control
+- Password strength validation
 """
-import os
-from datetime import datetime, timedelta
-from typing import Optional
-import hashlib
-import secrets
+from __future__ import annotations
 
+import hashlib
+import re
+from datetime import datetime, timedelta, timezone
+from typing import Optional
+
+import bcrypt
 from jose import JWTError, jwt
 
-# JWT settings
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-change-in-production")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 hours
+from app.config import settings
+
+# Sourced from centralized config — fails fast at startup if SECRET_KEY is missing.
+SECRET_KEY: str = settings.secret_key
+ALGORITHM: str = settings.jwt_algorithm
+ACCESS_TOKEN_EXPIRE_MINUTES: int = settings.access_token_expire_minutes
+
+PASSWORD_PATTERN = re.compile(
+    r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+)
+
+
+def validate_password_strength(password: str) -> tuple[bool, str]:
+    """Validate password strength. Returns (is_valid, error_message)."""
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters"
+    if len(password) > 128:
+        return False, "Password must be less than 128 characters"
+    if not re.search(r"[A-Z]", password):
+        return False, "Password must contain at least one uppercase letter"
+    if not re.search(r"[a-z]", password):
+        return False, "Password must contain at least one lowercase letter"
+    if not re.search(r"\d", password):
+        return False, "Password must contain at least one number"
+    return True, ""
 
 
 def hash_password(password: str) -> str:
-    """
-    Hash a password using PBKDF2 (compatible with all platforms).
-    Format: algorithm$iterations$salt$hash
-    """
-    iterations = 100000
-    salt = secrets.token_hex(32)
-    key = hashlib.pbkdf2_hmac(
-        'sha256',
-        password.encode(),
-        salt.encode(),
-        iterations
-    )
-    return f"pbkdf2_sha256${iterations}${salt}${key.hex()}"
+    """Hash a password using bcrypt."""
+    salt = bcrypt.gensalt(rounds=12)
+    hashed = bcrypt.hashpw(password.encode("utf-8"), salt)
+    return hashed.decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash."""
+    """Verify a password. Supports bcrypt and legacy PBKDF2 hashes."""
     try:
-        algorithm, iterations, salt, stored_hash = hashed_password.split('$')
-        
-        if algorithm != "pbkdf2_sha256":
+        if hashed_password.startswith("pbkdf2_sha256$"):
+            parts = hashed_password.split("$")
+            if len(parts) == 4:
+                iterations = int(parts[1])
+                salt = parts[2]
+                stored_hash = parts[3]
+                computed = hashlib.pbkdf2_hmac(
+                    "sha256",
+                    plain_password.encode("utf-8"),
+                    salt.encode("utf-8"),
+                    iterations,
+                )
+                return computed.hex() == stored_hash
             return False
-            
-        key = hashlib.pbkdf2_hmac(
-            'sha256',
-            plain_password.encode(),
-            salt.encode(),
-            int(iterations)
+        return bcrypt.checkpw(
+            plain_password.encode("utf-8"), hashed_password.encode("utf-8")
         )
-        return key.hex() == stored_hash
-    except (ValueError, AttributeError):
+    except Exception:
         return False
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """Create a JWT access token."""
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    
+    expire = datetime.now(timezone.utc) + (
+        expires_delta if expires_delta else timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    )
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
 def verify_token(token: str) -> Optional[dict]:
-    """Verify and decode a JWT token."""
+    """Verify and decode a JWT token. Returns None if invalid."""
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError:
         return None

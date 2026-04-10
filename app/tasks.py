@@ -5,15 +5,18 @@ Celery async tasks for FitLog.
 - Weekly digest email preparation
 """
 import json
-import os
-from datetime import datetime, timedelta
+import logging
+from datetime import datetime, timezone
+
+logger = logging.getLogger(__name__)
 
 from celery import Celery
 import redis
 
-# Redis client for caching
-redis_url = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-redis_client = redis.from_url(redis_url, decode_responses=True)
+from app.config import settings
+
+redis_client = redis.from_url(settings.redis_url, decode_responses=True)
+redis_url = settings.redis_url
 
 # Celery app
 celery_app = Celery(
@@ -49,7 +52,7 @@ def generate_workout_summary(self, user_id: str) -> dict:
         # For now, return a sample summary structure
         summary = {
             "user_id": user_id,
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "total_workouts_week": 4,
             "total_volume_kg": 2840.0,  # Total weight moved
             "avg_workout_duration_min": 45,
@@ -84,7 +87,7 @@ def analyze_nutrition(self, user_id: str) -> dict:
         # Placeholder: In real implementation, query macro entries
         analysis = {
             "user_id": user_id,
-            "generated_at": datetime.utcnow().isoformat(),
+            "generated_at": datetime.now(timezone.utc).isoformat(),
             "avg_daily_calories": 2300,
             "avg_daily_protein_g": 175,
             "protein_consistency": 0.92,  # 0-1 scale
@@ -113,17 +116,15 @@ def send_weekly_digest(user_id: str) -> bool:
         
         digest = {
             "user_id": user_id,
-            "sent_at": datetime.utcnow().isoformat(),
+            "sent_at": datetime.now(timezone.utc).isoformat(),
             "workout_summary": json.loads(workout_summary) if workout_summary else None,
             "nutrition_analysis": json.loads(nutrition_analysis) if nutrition_analysis else None,
         }
         
-        # Log digest (in production, send email here)
-        print(f"📧 Weekly digest prepared for {user_id}: {digest}")
-        
+        logger.info("Weekly digest prepared for user_id=%s", user_id)
         return True
-    except Exception as e:
-        print(f"❌ Error preparing digest: {e}")
+    except Exception:
+        logger.exception("Error preparing digest for user_id=%s", user_id)
         return False
 
 
@@ -145,7 +146,7 @@ def refresh_user_cache(user_id: str) -> dict:
         return {
             "status": "success",
             "user_id": user_id,
-            "refreshed_at": datetime.utcnow().isoformat(),
+            "refreshed_at": datetime.now(timezone.utc).isoformat(),
             "cached_items": ["workout_summary", "nutrition_analysis"],
         }
     except Exception as e:

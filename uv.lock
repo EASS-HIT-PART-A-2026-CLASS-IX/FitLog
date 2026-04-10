@@ -1154,16 +1154,21 @@ dependencies = [
     { name = "bcrypt" },
     { name = "celery" },
     { name = "fastapi", extra = ["standard"] },
-    { name = "httpx" },
+    { name = "httpx", extra = ["http2"] },
     { name = "openai" },
     { name = "passlib" },
+    { name = "plotly" },
     { name = "pydantic" },
     { name = "pydantic-ai" },
+    { name = "pydantic-settings" },
     { name = "python-dotenv" },
     { name = "python-jose" },
     { name = "redis" },
     { name = "sqlmodel" },
     { name = "streamlit" },
+    { name = "streamlit-antd-components" },
+    { name = "streamlit-float" },
+    { name = "streamlit-shadcn-ui" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -1179,17 +1184,22 @@ requires-dist = [
     { name = "bcrypt", specifier = ">=4.1.0" },
     { name = "celery", specifier = ">=5.4.0" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.0" },
-    { name = "httpx", specifier = ">=0.27.0" },
+    { name = "httpx", extras = ["http2"], specifier = ">=0.27.0" },
     { name = "openai", specifier = ">=1.0.0" },
     { name = "passlib", specifier = ">=1.7.4" },
+    { name = "plotly", specifier = ">=6.6.0" },
     { name = "pydantic", specifier = ">=2.0" },
     { name = "pydantic-ai", specifier = ">=0.1.0" },
+    { name = "pydantic-settings", specifier = ">=2.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "python-jose", specifier = ">=3.3.0" },
     { name = "redis", specifier = ">=5.0.0" },
     { name = "sqlmodel", specifier = ">=0.0.18" },
     { name = "streamlit", specifier = ">=1.28.0" },
+    { name = "streamlit-antd-components", specifier = ">=0.3.0" },
+    { name = "streamlit-float", specifier = ">=0.3.2" },
+    { name = "streamlit-shadcn-ui", specifier = ">=0.1.0" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.30.0" },
 ]
 provides-extras = ["dev"]
@@ -1530,6 +1540,19 @@ wheels = [
 ]
 
 [[package]]
+name = "h2"
+version = "4.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "hpack" },
+    { name = "hyperframe" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/1d/17/afa56379f94ad0fe8defd37d6eb3f89a25404ffc71d4d848893d270325fc/h2-4.3.0.tar.gz", hash = "sha256:6c59efe4323fa18b47a632221a1888bd7fde6249819beda254aeca909f221bf1", size = 2152026, upload-time = "2025-08-23T18:12:19.778Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/69/b2/119f6e6dcbd96f9069ce9a2665e0146588dc9f88f29549711853645e736a/h2-4.3.0-py3-none-any.whl", hash = "sha256:c438f029a25f7945c69e0ccf0fb951dc3f73a5f6412981daee861431b70e2bdd", size = 61779, upload-time = "2025-08-23T18:12:17.779Z" },
+]
+
+[[package]]
 name = "hf-xet"
 version = "1.4.2"
 source = { registry = "https://pypi.org/simple" }
@@ -1559,6 +1582,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/54/75/07f6aa680575d9646c4167db6407c41340cbe2357f5654c4e72a1b01ca14/hf_xet-1.4.2-cp37-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:6b0932eb8b10317ea78b7da6bab172b17be03bbcd7809383d8d5abd6a2233e04", size = 4432751, upload-time = "2026-03-13T06:58:46.533Z" },
     { url = "https://files.pythonhosted.org/packages/cd/71/193eabd7e7d4b903c4aa983a215509c6114915a5a237525ec562baddb868/hf_xet-1.4.2-cp37-abi3-win_amd64.whl", hash = "sha256:ad185719fb2e8ac26f88c8100562dbf9dbdcc3d9d2add00faa94b5f106aea53f", size = 3671149, upload-time = "2026-03-13T06:58:57.07Z" },
     { url = "https://files.pythonhosted.org/packages/b4/7e/ccf239da366b37ba7f0b36095450efae4a64980bdc7ec2f51354205fdf39/hf_xet-1.4.2-cp37-abi3-win_arm64.whl", hash = "sha256:32c012286b581f783653e718c1862aea5b9eb140631685bb0c5e7012c8719a87", size = 3533426, upload-time = "2026-03-13T06:58:55.46Z" },
+]
+
+[[package]]
+name = "hpack"
+version = "4.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/2c/48/71de9ed269fdae9c8057e5a4c0aa7402e8bb16f2c6e90b3aa53327b113f8/hpack-4.1.0.tar.gz", hash = "sha256:ec5eca154f7056aa06f196a557655c5b009b382873ac8d1e66e79e87535f1dca", size = 51276, upload-time = "2025-01-22T21:44:58.347Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/07/c6/80c95b1b2b94682a72cbdbfb85b81ae2daffa4291fbfa1b1464502ede10d/hpack-4.1.0-py3-none-any.whl", hash = "sha256:157ac792668d995c657d93111f46b4535ed114f0c9c8d672271bbec7eae1b496", size = 34357, upload-time = "2025-01-22T21:44:56.92Z" },
 ]
 
 [[package]]
@@ -1625,6 +1657,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/2a/39/e50c7c3a983047577ee07d2a9e53faf5a69493943ec3f6a384bdc792deb2/httpx-0.28.1-py3-none-any.whl", hash = "sha256:d909fcccc110f8c7faf814ca82a9a4d816bc5a6dbfea25d6591d6985b8ba59ad", size = 73517, upload-time = "2024-12-06T15:37:21.509Z" },
 ]
 
+[package.optional-dependencies]
+http2 = [
+    { name = "h2" },
+]
+
 [[package]]
 name = "httpx-sse"
 version = "0.4.3"
@@ -1652,6 +1689,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/19/15/eafc1c57bf0f8afffb243dcd4c0cceb785e956acc17bba4d9bf2ae21fc9c/huggingface_hub-1.7.2.tar.gz", hash = "sha256:7f7e294e9bbb822e025bdb2ada025fa4344d978175a7f78e824d86e35f7ab43b", size = 724684, upload-time = "2026-03-20T10:36:08.767Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/08/de/3ad061a05f74728927ded48c90b73521b9a9328c85d841bdefb30e01fb85/huggingface_hub-1.7.2-py3-none-any.whl", hash = "sha256:288f33a0a17b2a73a1359e2a5fd28d1becb2c121748c6173ab8643fb342c850e", size = 618036, upload-time = "2026-03-20T10:36:06.824Z" },
+]
+
+[[package]]
+name = "hyperframe"
+version = "6.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/02/e7/94f8232d4a74cc99514c13a9f995811485a6903d48e5d952771ef6322e30/hyperframe-6.1.0.tar.gz", hash = "sha256:f630908a00854a7adeabd6382b43923a4c4cd4b821fcb527e6ab9e15382a3b08", size = 26566, upload-time = "2025-01-22T21:41:49.302Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/48/30/47d0bf6072f7252e6521f3447ccfa40b421b6824517f82854703d0f5a98b/hyperframe-6.1.0-py3-none-any.whl", hash = "sha256:b03380493a519fce58ea5af42e4a42317bf9bd425596f7a0835ffce80f1a42e5", size = 13007, upload-time = "2025-01-22T21:41:47.295Z" },
 ]
 
 [[package]]
@@ -2664,6 +2710,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/19/56/8d4c30c8a1d07013911a8fdbd8f89440ef9f08d07a1b50ab8ca8be5a20f9/platformdirs-4.9.4.tar.gz", hash = "sha256:1ec356301b7dc906d83f371c8f487070e99d3ccf9e501686456394622a01a934", size = 28737, upload-time = "2026-03-05T18:34:13.271Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/63/d7/97f7e3a6abb67d8080dd406fd4df842c2be0efaf712d1c899c32a075027c/platformdirs-4.9.4-py3-none-any.whl", hash = "sha256:68a9a4619a666ea6439f2ff250c12a853cd1cbd5158d258bd824a7df6be2f868", size = 21216, upload-time = "2026-03-05T18:34:12.172Z" },
+]
+
+[[package]]
+name = "plotly"
+version = "6.6.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "narwhals" },
+    { name = "packaging" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/24/fb/41efe84970cfddefd4ccf025e2cbfafe780004555f583e93dba3dac2cdef/plotly-6.6.0.tar.gz", hash = "sha256:b897f15f3b02028d69f755f236be890ba950d0a42d7dfc619b44e2d8cea8748c", size = 7027956, upload-time = "2026-03-02T21:10:25.321Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/52/d2/c6e44dba74f17c6216ce1b56044a9b93a929f1c2d5bdaff892512b260f5e/plotly-6.6.0-py3-none-any.whl", hash = "sha256:8d6daf0f87412e0c0bfe72e809d615217ab57cc715899a1e5145135a7800d1d0", size = 9910315, upload-time = "2026-03-02T21:10:18.131Z" },
 ]
 
 [[package]]
@@ -3984,6 +4043,55 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/92/8e/f2b8b4fa8ba65aae251170c54f8ce198fb588fc348301c2b624f8c63efac/streamlit-1.55.0.tar.gz", hash = "sha256:015e512bbd02d000f4047e51118dc086b70e7d9c46b4a11a33c2509731379626", size = 8612008, upload-time = "2026-03-03T22:26:02.149Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/dc/e6/412c1e1f200ca8c32ecf10201839183e261ad61ced3ede34a66f6d4be3cf/streamlit-1.55.0-py3-none-any.whl", hash = "sha256:1e4a16449c6131696180f4ddb40ea8c51834e89c2a43e1b0362bc9b1cfd9b415", size = 9075714, upload-time = "2026-03-03T22:25:59.126Z" },
+]
+
+[[package]]
+name = "streamlit-antd-components"
+version = "0.3.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "streamlit" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b5/dc/1ed6266b606e3b494b9af3e2c310ea6cbe2e967aa18873d03c5b267b4c81/streamlit_antd_components-0.3.2-py3-none-any.whl", hash = "sha256:5ae28496127202ed266ea167649436a15f3d548a4805ee5d992c6fc0fe103fd6", size = 2805502, upload-time = "2024-01-19T07:11:42.614Z" },
+]
+
+[[package]]
+name = "streamlit-extras"
+version = "1.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "plotly" },
+    { name = "streamlit" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/5b/70/0bf3fb54419aa82879d8767288283daee7ba8acca546434869f60d8db13d/streamlit_extras-1.3.0.tar.gz", hash = "sha256:437be7422230a13b9606f9f6ec22e5f2595bde4b8352ce01ab43c6552bf0aeab", size = 345397, upload-time = "2026-03-31T16:07:25.487Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/93/5c/35330b8b756ea9e2bcb3aa0f94ed949c5bb29ce1e4bf2f1aa89ea2497b07/streamlit_extras-1.3.0-py3-none-any.whl", hash = "sha256:3cdf9deede3f5560ee179158fcb9c8232fa1da54fca8439ed8bab9d3185d35f9", size = 602725, upload-time = "2026-03-31T16:07:26.75Z" },
+]
+
+[[package]]
+name = "streamlit-float"
+version = "0.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "streamlit" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/90/9c/2b01908b1821320901a0e30758b7eb9661a87983fecce11f5e39e03f120c/streamlit_float-0.4.0.tar.gz", hash = "sha256:ef1114d3b3b6356ae9175aaa89626bcf62bee476ec40a6e94e3a209accbdb82c", size = 16720, upload-time = "2025-11-14T05:48:34.188Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d9/e0/b951225656f9e22a435faa7b16ab193e1114684e45b68dbb36bd84c8e1b1/streamlit_float-0.4.0-py3-none-any.whl", hash = "sha256:3818cefe0127dd4517f39f7e9cc84acdb387e8477db3656f8e1ab8c68aa34d20", size = 16064, upload-time = "2025-11-14T05:48:33.051Z" },
+]
+
+[[package]]
+name = "streamlit-shadcn-ui"
+version = "0.1.19"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "streamlit" },
+    { name = "streamlit-extras" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/98/44/988e29d4853d0420e7c378393218a92bd897dbb399a7380102f44d821535/streamlit_shadcn_ui-0.1.19.tar.gz", hash = "sha256:70023d343c74a9542180092769ba26841a9248cdfe1a13b2415bfc6710f9b1bd", size = 330491, upload-time = "2025-10-17T18:49:49.827Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/37/25/1f5d992affc461a72f339876fbd3a1cde6b96aa3df08405bd3bd758f1f35/streamlit_shadcn_ui-0.1.19-py3-none-any.whl", hash = "sha256:73466ba1cc690794d41f5b67fd271c27ed8f78c6a3437d9df90a5409816299ec", size = 360639, upload-time = "2025-10-17T18:49:47.512Z" },
 ]
 
 [[package]]

@@ -3,17 +3,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.repository import exercises_repo, macros_repo, profiles_repo, workout_logs_repo
-
-
-@pytest.fixture(autouse=True)
-def clear_repos():
-    """Reset all in-memory repos before each test for isolation."""
-    exercises_repo._store.clear()
-    workout_logs_repo._store.clear()
-    macros_repo._store.clear()
-    profiles_repo._store.clear()
-    yield
 
 
 @pytest.fixture

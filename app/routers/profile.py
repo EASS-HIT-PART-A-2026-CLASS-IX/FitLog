@@ -7,34 +7,55 @@ Protein multipliers (evidence-based, per ISSN / ACSM guidelines):
   - fit    (maintenance/recomp): 1.6 g / kg body weight
   - muscle (hypertrophy/bulk):   2.2 g / kg body weight
 """
+
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status, Depends, Header
+from fastapi import APIRouter, status, Depends, Header
+from app.exceptions import NotFoundError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.models import (
+    ProfileGoalsOut,
+    ProfileGoalsUpdate,
     ProteinTargetOut,
     UserProfileCreate,
     UserProfileOut,
     UserProfileUpdate,
 )
 from app.database import get_session
-from app.db import User, FitnessProfile
+from app.db import User, FitnessProfile, ProfileGoals
 from app.routers.auth import get_current_user_from_header
 
 router = APIRouter(prefix="/profile", tags=["Fitness Profile"])
 
 # Protein multipliers per goal (g per kg of body weight)
 PROTEIN_MULTIPLIERS: dict[str, float] = {
-    "fit": 1.6,
+    "fit": 1.8,
     "muscle": 2.2,
+    "weight_loss": 2.0,
+    "maintenance": 1.6,
+    "general_health": 1.4,
+    "endurance": 1.6,
+    "flexibility": 1.4,
+    "hypertrophy": 2.2,
+    "strength": 2.0,
+    "athletic_performance": 1.8,
 }
 
 GOAL_DESCRIPTIONS: dict[str, str] = {
-    "fit": "maintenance and light body recomposition",
-    "muscle": "muscle hypertrophy and bulking phase",
+    "fit": "maintenance and light body recomposition (1.8g/kg)",
+    "muscle": "muscle hypertrophy and bulking phase (2.2g/kg)",
+    "weight_loss": "fat loss while preserving lean mass (2.0g/kg)",
+    "maintenance": "maintaining current body composition (1.6g/kg)",
+    "general_health": "overall health and wellbeing (1.4g/kg)",
+    "endurance": "endurance training and recovery (1.6g/kg)",
+    "flexibility": "flexibility and mobility focus (1.4g/kg)",
+    "hypertrophy": "maximum muscle growth (2.2g/kg)",
+    "strength": "strength and power development (2.0g/kg)",
+    "athletic_performance": "athletic performance optimization (1.8g/kg)",
 }
 
 
@@ -52,7 +73,7 @@ async def list_profiles(
     stmt = select(FitnessProfile).where(FitnessProfile.user_id == current_user.id)
     result = await session.execute(stmt)
     profiles = result.scalars().all()
-    
+
     return [
         UserProfileOut(
             id=p.id,
@@ -83,10 +104,10 @@ async def get_profile(
     )
     result = await session.execute(stmt)
     profile = result.scalars().first()
-    
+
     if not profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
-    
+        raise NotFoundError("Profile not found")
+
     return UserProfileOut(
         id=profile.id,
         name=profile.name,
@@ -120,11 +141,11 @@ async def create_profile(
         gender=body.gender,
         goal=body.goal,
     )
-    
+
     session.add(new_profile)
     await session.commit()
     await session.refresh(new_profile)
-    
+
     return UserProfileOut(
         id=new_profile.id,
         name=new_profile.name,
@@ -153,18 +174,18 @@ async def update_profile(
     )
     result = await session.execute(stmt)
     profile = result.scalars().first()
-    
+
     if not profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
-    
+        raise NotFoundError("Profile not found")
+
     # Update fields that are provided
     update_data = body.model_dump(exclude_none=True)
     for key, value in update_data.items():
         setattr(profile, key, value)
-    
+
     await session.commit()
     await session.refresh(profile)
-    
+
     return UserProfileOut(
         id=profile.id,
         name=profile.name,
@@ -192,10 +213,10 @@ async def delete_profile(
     )
     result = await session.execute(stmt)
     profile = result.scalars().first()
-    
+
     if not profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
-    
+        raise NotFoundError("Profile not found")
+
     await session.delete(profile)
     await session.commit()
 
@@ -222,20 +243,100 @@ async def get_protein_target(
     )
     result = await session.execute(stmt)
     profile = result.scalars().first()
-    
+
     if not profile:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
-    
+        raise NotFoundError("Profile not found")
+
     multiplier = PROTEIN_MULTIPLIERS.get(profile.goal, 1.6)
     protein_g = profile.weight_kg * multiplier
     goal_desc = GOAL_DESCRIPTIONS.get(profile.goal, "fitness goal")
-    
+
     return ProteinTargetOut(
-        user_id=profile.id,
+        user_id=profile.user_id,
         name=profile.name,
         weight_kg=profile.weight_kg,
+        goal=profile.goal,
         protein_g=round(protein_g, 1),
         multiplier_g_per_kg=multiplier,
         recommendation=f"Based on {profile.weight_kg} kg and your goal of {goal_desc}, "
-                      f"aim for {protein_g:.0f}-{protein_g * 1.05:.0f}g of protein daily.",
+        f"aim for {protein_g:.0f}-{protein_g * 1.05:.0f}g of protein daily.",
+    )
+
+
+@router.get(
+    "/{profile_id}/goals",
+    response_model=ProfileGoalsOut,
+    summary="Get goal targets for a fitness profile",
+)
+async def get_profile_goals(
+    profile_id: str,
+    current_user: User = Depends(get_current_user_from_header),
+    session: AsyncSession = Depends(get_session),
+):
+    """Return the user-defined goals for a profile. Returns empty goals if none set yet."""
+    # Verify profile ownership
+    stmt = select(FitnessProfile).where(
+        (FitnessProfile.id == profile_id) & (FitnessProfile.user_id == current_user.id)
+    )
+    result = await session.execute(stmt)
+    if not result.scalars().first():
+        raise NotFoundError("Profile not found")
+
+    stmt = select(ProfileGoals).where(ProfileGoals.profile_id == profile_id)
+    result = await session.execute(stmt)
+    goals = result.scalars().first()
+
+    return ProfileGoalsOut(
+        profile_id=profile_id,
+        daily_steps=goals.daily_steps if goals else None,
+        weekly_workouts=goals.weekly_workouts if goals else None,
+        daily_calories=goals.daily_calories if goals else None,
+        daily_protein_g=goals.daily_protein_g if goals else None,
+        daily_water_ml=goals.daily_water_ml if goals else None,
+    )
+
+
+@router.put(
+    "/{profile_id}/goals",
+    response_model=ProfileGoalsOut,
+    summary="Set goal targets for a fitness profile",
+)
+async def upsert_profile_goals(
+    profile_id: str,
+    body: ProfileGoalsUpdate,
+    current_user: User = Depends(get_current_user_from_header),
+    session: AsyncSession = Depends(get_session),
+):
+    """Create or update the user-defined goals for a profile (upsert)."""
+    # Verify profile ownership
+    stmt = select(FitnessProfile).where(
+        (FitnessProfile.id == profile_id) & (FitnessProfile.user_id == current_user.id)
+    )
+    result = await session.execute(stmt)
+    if not result.scalars().first():
+        raise NotFoundError("Profile not found")
+
+    stmt = select(ProfileGoals).where(ProfileGoals.profile_id == profile_id)
+    result = await session.execute(stmt)
+    goals = result.scalars().first()
+
+    updates = body.model_dump(exclude_none=True)
+    if goals is None:
+        goals = ProfileGoals(profile_id=profile_id, **updates)
+        session.add(goals)
+    else:
+        for k, v in updates.items():
+            setattr(goals, k, v)
+        goals.updated_at = datetime.utcnow()
+
+    await session.commit()
+    await session.refresh(goals)
+
+    return ProfileGoalsOut(
+        profile_id=profile_id,
+        daily_steps=goals.daily_steps,
+        weekly_workouts=goals.weekly_workouts,
+        daily_calories=goals.daily_calories,
+        daily_protein_g=goals.daily_protein_g,
+        daily_water_ml=goals.daily_water_ml,
     )
