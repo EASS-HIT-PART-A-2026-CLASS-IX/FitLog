@@ -2,30 +2,26 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/* \
-    && curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.local/bin:$PATH"
+RUN pip install --no-cache-dir uv
 
 COPY pyproject.toml uv.lock ./
-RUN uv sync --no-dev --frozen
+RUN uv sync --no-dev --frozen --compile-bytecode
 
-# ── Runtime ───────────────────────────────────────────────────────────────────
+# ── Runtime ───────────────────────────────────────────────────
 FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/* \
-    && curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.local/bin:$PATH"
-
 COPY --from=builder /app/.venv /app/.venv
-COPY --from=builder /app/pyproject.toml /app/uv.lock ./
 COPY frontend ./frontend
 
-WORKDIR /app/frontend
-
-# API_BASE is set at runtime via docker-compose env
+ENV PATH="/app/.venv/bin:$PATH"
+# Override at deploy time via API_BASE env var
 ENV API_BASE=http://localhost:8000
 
 EXPOSE 8501
-CMD ["sh", "-c", "uv run --project /app streamlit run app.py --server.address=0.0.0.0 --server.port=${PORT:-8501} --server.headless=true --browser.gatherUsageStats=false"]
+CMD streamlit run frontend/app.py \
+      --server.address=0.0.0.0 \
+      --server.port=${PORT:-8501} \
+      --server.headless=true \
+      --browser.gatherUsageStats=false

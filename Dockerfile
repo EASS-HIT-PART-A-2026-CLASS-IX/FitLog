@@ -2,29 +2,26 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/* \
-    && curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.local/bin:$PATH"
+RUN pip install --no-cache-dir uv
 
 COPY pyproject.toml uv.lock ./
-RUN uv sync --no-dev --frozen
+RUN uv sync --no-dev --frozen --compile-bytecode
 
-# ── Runtime ───────────────────────────────────────────────────────────────────
+# ── Runtime ───────────────────────────────────────────────────
 FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/* \
-    && curl -LsSf https://astral.sh/uv/install.sh | sh
-ENV PATH="/root/.local/bin:$PATH"
+# asyncpg needs libpq (PostgreSQL client lib)
+RUN apt-get update && apt-get install -y --no-install-recommends libpq5 && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/.venv /app/.venv
-COPY --from=builder /app/pyproject.toml /app/uv.lock ./
 COPY app ./app
+COPY alembic ./alembic
+COPY alembic.ini ./alembic.ini
 
-# SQLite DB lives in /app/data (mounted as a volume)
-RUN mkdir -p /app/data
-ENV DATABASE_URL=sqlite+aiosqlite:///data/fitlog.db
+ENV PATH="/app/.venv/bin:$PATH"
+ENV DATABASE_URL=sqlite+aiosqlite:///./fitlog.db
 
 EXPOSE 8000
-CMD ["sh", "-c", "uv run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}

@@ -382,6 +382,40 @@ label { color: var(--muted) !important; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(0,255,135,0.4); }
+
+/* ── Chart legend pill ── */
+.chart-legend { display: flex; gap: .5rem; align-items: center; margin-bottom: .5rem; flex-wrap: wrap; }
+.legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.legend-label { font-size: .71rem; color: var(--muted); font-weight: 500; }
+
+/* ── Progress ring / section improvements ── */
+.card:hover { border-color: rgba(255,255,255,0.08); }
+.card-accent:hover { border-left-color: var(--accent); }
+
+/* ── KPI card polish ── */
+.kpi-card {
+  position: relative; overflow: hidden;
+}
+.kpi-card::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.015) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+/* ── Welcome box typography ── */
+.welcome-box h2 { letter-spacing: -.02em; }
+
+/* ── Activity item polish ── */
+.activity-item:hover { border-color: rgba(255,255,255,0.08); background: var(--surface); }
+
+/* ── Section header rule ── */
+.section-rule {
+  display: flex; align-items: center; gap: .5rem; margin-bottom: .75rem;
+}
+.section-rule::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
 </style>
 """
 
@@ -560,20 +594,66 @@ def _workout_card(name: str, detail: str, date_str: str) -> None:
     </div>""", unsafe_allow_html=True)
 
 
-def _dark_chart(fig, height: int = 220) -> None:
+def _dark_chart(fig, height: int = 270) -> None:
     if not HAS_PLOTLY:
         return
     fig.update_layout(
         template="plotly_dark",
         paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(255,255,255,0.02)",
-        margin=dict(l=0, r=0, t=8, b=0),
+        plot_bgcolor="rgba(255,255,255,0.015)",
+        margin=dict(l=4, r=4, t=18, b=4),
         height=height,
-        font=dict(color="#9CA3AF", family="Inter, sans-serif"),
-        xaxis=dict(gridcolor="rgba(255,255,255,0.05)", tickfont=dict(size=10)),
-        yaxis=dict(gridcolor="rgba(255,255,255,0.05)", tickfont=dict(size=10)),
+        font=dict(color="#9CA3AF", family="Inter, sans-serif", size=11),
+        xaxis=dict(
+            gridcolor="rgba(255,255,255,0.04)",
+            tickfont=dict(size=10, color="#6B7280"),
+            tickangle=-35,
+            showgrid=False,
+            linecolor="rgba(255,255,255,0.06)",
+        ),
+        yaxis=dict(
+            gridcolor="rgba(255,255,255,0.06)",
+            tickfont=dict(size=10, color="#6B7280"),
+            zeroline=False,
+            linecolor="rgba(255,255,255,0.06)",
+        ),
+        bargap=0.28,
+        hoverlabel=dict(
+            bgcolor="#1A1A1A",
+            bordercolor="#2A2A2A",
+            font=dict(color="#FFFFFF", size=12, family="Inter, sans-serif"),
+        ),
+        legend=dict(
+            orientation="h", yanchor="bottom", y=1.0,
+            xanchor="right", x=1,
+            font=dict(size=10), bgcolor="rgba(0,0,0,0)",
+        ),
     )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
+
+def _goal_color(val: float, target: float) -> str:
+    """3-tier color: green = met, amber = within 25%, red = far below."""
+    if target <= 0:
+        return "#00FF87"
+    pct = val / target
+    if pct >= 0.97:
+        return "#00FF87"
+    elif pct >= 0.70:
+        return "#FFB347"
+    else:
+        return "#FF6B6B"
+
+
+def _chart_legend(met_label: str = "Goal met", partial_label: str = "Within 30%", miss_label: str = "Below target") -> None:
+    st.markdown(
+        f'<div class="chart-legend">'
+        f'<span class="legend-dot" style="background:#00FF87;"></span><span class="legend-label">{met_label}</span>'
+        f'<span class="legend-dot" style="background:#FFB347;margin-left:.25rem;"></span><span class="legend-label">{partial_label}</span>'
+        f'<span class="legend-dot" style="background:#FF6B6B;margin-left:.25rem;"></span><span class="legend-label">{miss_label}</span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
 
 # ── Login page ────────────────────────────────────────────────
@@ -1133,9 +1213,34 @@ def show_my_progress():
         summary_parts.append(f"calories on target {cal_on_target}/{len(recent_macros)} days")
     summary_parts.append(f"workouts this week: {workouts_week}/{freq_target}")
     if summary_parts:
+        step_pct  = min(100, int(avg_steps_7d / steps_target * 100)) if steps_target else 0
+        cal_pct   = min(100, int(avg_cals_7d  / cal_target  * 100)) if cal_target   else 0
+        prot_pct  = min(100, int(avg_prot_7d  / protein_target_g * 100)) if protein_target_g else 0
+        freq_pct  = min(100, int(workouts_week / freq_target * 100)) if freq_target else 0
+
+        def _mini_bar(pct: int, color: str) -> str:
+            return (
+                f'<div style="height:3px;background:var(--border2);border-radius:2px;width:60px;margin-top:3px;">'
+                f'<div style="height:100%;width:{pct}%;background:{color};border-radius:2px;transition:width .4s;"></div></div>'
+            )
+
         st.markdown(
-            f'<div class="card" style="border-left:3px solid var(--accent);padding:.75rem 1.1rem;margin-bottom:.5rem;">'
-            f'<span style="color:var(--muted);font-size:.82rem;">Last 7 days — {" · ".join(summary_parts)}</span></div>',
+            f'<div class="card" style="border-left:3px solid var(--accent);padding:.85rem 1.1rem;margin-bottom:.5rem;">'
+            f'<div style="font-size:.7rem;font-weight:700;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.6rem;">Last 7 Days</div>'
+            f'<div style="display:flex;gap:1.5rem;flex-wrap:wrap;">'
+            f'<div><div style="font-size:.72rem;color:var(--muted);">Steps</div>'
+            f'<div style="font-size:.9rem;font-weight:700;color:{"#00FF87" if step_pct>=97 else "#FFB347" if step_pct>=70 else "#FF6B6B"};">{step_pct}%</div>'
+            f'{_mini_bar(step_pct, "#00FF87" if step_pct>=97 else "#FFB347" if step_pct>=70 else "#FF6B6B")}</div>'
+            f'<div><div style="font-size:.72rem;color:var(--muted);">Calories</div>'
+            f'<div style="font-size:.9rem;font-weight:700;color:{"#00C2FF" if 90<=cal_pct<=110 else "#FFB347" if 75<=cal_pct<=125 else "#FF6B6B"};">{cal_pct}%</div>'
+            f'{_mini_bar(min(cal_pct,100), "#00C2FF" if 90<=cal_pct<=110 else "#FFB347" if 75<=cal_pct<=125 else "#FF6B6B")}</div>'
+            f'<div><div style="font-size:.72rem;color:var(--muted);">Protein</div>'
+            f'<div style="font-size:.9rem;font-weight:700;color:{"#00FF87" if prot_pct>=97 else "#FFB347" if prot_pct>=70 else "#FF6B6B"};">{prot_pct}%</div>'
+            f'{_mini_bar(prot_pct, "#00FF87" if prot_pct>=97 else "#FFB347" if prot_pct>=70 else "#FF6B6B")}</div>'
+            f'<div><div style="font-size:.72rem;color:var(--muted);">Workouts</div>'
+            f'<div style="font-size:.9rem;font-weight:700;color:{"#00FF87" if freq_pct>=100 else "#FFB347" if freq_pct>=70 else "#FF6B6B"};">{workouts_week}/{freq_target}</div>'
+            f'{_mini_bar(freq_pct, "#00FF87" if freq_pct>=100 else "#FFB347" if freq_pct>=70 else "#FF6B6B")}</div>'
+            f'</div></div>',
             unsafe_allow_html=True,
         )
 
@@ -1154,14 +1259,28 @@ def show_my_progress():
             key=lambda x: _pd(x.get("entry_date")) or date.min,
         )
         if sd:
+            _chart_legend("Hit goal", "70–97%", "Below 70%")
             sdates = [str(_pd(s["entry_date"])) for s in sd]
             svals  = [s.get("steps", 0) for s in sd]
+            colors = [_goal_color(v, steps_target) for v in svals]
             fig = go.Figure()
-            fig.add_trace(go.Bar(x=sdates, y=svals, name="Steps",
-                marker=dict(color=["#00FF87" if v >= steps_target else "#374151" for v in svals])))
-            fig.add_hline(y=steps_target, line=dict(color="rgba(0,255,135,0.4)", dash="dot", width=1.5),
-                          annotation_text="goal", annotation_font_color="#9CA3AF", annotation_font_size=10)
-            _dark_chart(fig, 200)
+            fig.add_trace(go.Bar(
+                x=sdates, y=svals, name="Steps",
+                marker=dict(color=colors, opacity=0.85, line=dict(width=0)),
+                text=[f"{v:,}" for v in svals],
+                textposition="outside",
+                textfont=dict(size=9, color="#9CA3AF"),
+                hovertemplate="<b>%{x}</b><br>Steps: <b>%{y:,}</b><br>Goal: " + f"{steps_target:,}" + "<extra></extra>",
+            ))
+            fig.add_hline(
+                y=steps_target,
+                line=dict(color="rgba(0,255,135,0.45)", dash="dot", width=1.5),
+                annotation_text=f"goal {steps_target:,}",
+                annotation_font_color="#6B7280", annotation_font_size=9,
+                annotation_position="top right",
+            )
+            fig.update_yaxis(tickformat=",")
+            _dark_chart(fig, 260)
         else:
             st.info("Log daily steps in Wellness → Steps.")
         st.markdown("</div>", unsafe_allow_html=True)
@@ -1175,14 +1294,35 @@ def show_my_progress():
             key=lambda x: _pd(x.get("entry_date")) or date.min,
         )
         if cal_sorted:
+            _chart_legend("On target (±10%)", "±10–25%", ">25% off target")
             cdates = [str(_pd(m["entry_date"])) for m in cal_sorted]
             cvals  = [m.get("calories", 0) for m in cal_sorted]
+            # For calories: near-target is best; over/under both shown
+            def _cal_color(v):
+                if cal_target <= 0: return "#00C2FF"
+                deviation = abs(v - cal_target) / cal_target
+                if deviation <= 0.10: return "#00C2FF"
+                elif deviation <= 0.25: return "#FFB347"
+                else: return "#FF6B6B"
+            colors_c = [_cal_color(v) for v in cvals]
             fig = go.Figure()
-            fig.add_trace(go.Bar(x=cdates, y=cvals, name="Calories",
-                marker=dict(color=["#00C2FF" if abs(v - cal_target) / cal_target <= 0.1 else "#374151" for v in cvals])))
-            fig.add_hline(y=cal_target, line=dict(color="rgba(0,194,255,0.45)", dash="dot", width=1.5),
-                          annotation_text="target", annotation_font_color="#9CA3AF", annotation_font_size=10)
-            _dark_chart(fig, 200)
+            fig.add_trace(go.Bar(
+                x=cdates, y=cvals, name="Calories",
+                marker=dict(color=colors_c, opacity=0.85, line=dict(width=0)),
+                text=[f"{v:,.0f}" for v in cvals],
+                textposition="outside",
+                textfont=dict(size=9, color="#9CA3AF"),
+                hovertemplate="<b>%{x}</b><br>Calories: <b>%{y:,.0f} kcal</b><br>Target: " + f"{cal_target:,} kcal" + "<extra></extra>",
+            ))
+            fig.add_hline(
+                y=cal_target,
+                line=dict(color="rgba(0,194,255,0.45)", dash="dot", width=1.5),
+                annotation_text=f"target {cal_target:,}",
+                annotation_font_color="#6B7280", annotation_font_size=9,
+                annotation_position="top right",
+            )
+            fig.update_yaxis(tickformat=",")
+            _dark_chart(fig, 260)
         else:
             st.info("Log meals in Nutrition to see calorie tracking.")
         st.markdown("</div>", unsafe_allow_html=True)
@@ -1198,14 +1338,27 @@ def show_my_progress():
             key=lambda x: _pd(x.get("entry_date")) or date.min,
         )
         if prot_sorted:
+            _chart_legend("Hit target", "70–97%", "Below 70%")
             pdates = [str(_pd(m["entry_date"])) for m in prot_sorted]
             pvals  = [m.get("protein_g", 0) for m in prot_sorted]
+            colors_p = [_goal_color(v, protein_target_g) for v in pvals]
             fig = go.Figure()
-            fig.add_trace(go.Bar(x=pdates, y=pvals, name="Protein",
-                marker=dict(color=["#00FF87" if v >= protein_target_g else "#374151" for v in pvals])))
-            fig.add_hline(y=protein_target_g, line=dict(color="rgba(0,255,135,0.45)", dash="dot", width=1.5),
-                          annotation_text="target", annotation_font_color="#9CA3AF", annotation_font_size=10)
-            _dark_chart(fig, 200)
+            fig.add_trace(go.Bar(
+                x=pdates, y=pvals, name="Protein",
+                marker=dict(color=colors_p, opacity=0.85, line=dict(width=0)),
+                text=[f"{v:.0f}g" for v in pvals],
+                textposition="outside",
+                textfont=dict(size=9, color="#9CA3AF"),
+                hovertemplate="<b>%{x}</b><br>Protein: <b>%{y:.0f}g</b><br>Target: " + f"{protein_target_g:.0f}g" + "<extra></extra>",
+            ))
+            fig.add_hline(
+                y=protein_target_g,
+                line=dict(color="rgba(0,255,135,0.45)", dash="dot", width=1.5),
+                annotation_text=f"target {protein_target_g:.0f}g",
+                annotation_font_color="#6B7280", annotation_font_size=9,
+                annotation_position="top right",
+            )
+            _dark_chart(fig, 260)
         else:
             st.info("Log meals in Nutrition to see protein tracking.")
         st.markdown("</div>", unsafe_allow_html=True)
@@ -1222,14 +1375,28 @@ def show_my_progress():
             freq[wk] = freq.get(wk, 0) + 1
         weeks = sorted(freq.items())
         if weeks:
+            _chart_legend("Goal reached", "Partial week", "Under target")
             wlabels = [wk[0] for wk in weeks]
             wcounts = [wk[1] for wk in weeks]
+            colors_w = [_goal_color(v, freq_target) for v in wcounts]
             fig = go.Figure()
-            fig.add_trace(go.Bar(x=wlabels, y=wcounts, name="Sessions",
-                marker=dict(color=["#00FF87" if v >= freq_target else "#374151" for v in wcounts])))
-            fig.add_hline(y=freq_target, line=dict(color="rgba(0,255,135,0.45)", dash="dot", width=1.5),
-                          annotation_text="goal", annotation_font_color="#9CA3AF", annotation_font_size=10)
-            _dark_chart(fig, 200)
+            fig.add_trace(go.Bar(
+                x=wlabels, y=wcounts, name="Sessions",
+                marker=dict(color=colors_w, opacity=0.85, line=dict(width=0)),
+                text=[str(v) for v in wcounts],
+                textposition="outside",
+                textfont=dict(size=11, color="#9CA3AF"),
+                hovertemplate="<b>Week of %{x}</b><br>Sessions: <b>%{y}</b><br>Goal: " + str(freq_target) + "/week<extra></extra>",
+            ))
+            fig.add_hline(
+                y=freq_target,
+                line=dict(color="rgba(0,255,135,0.45)", dash="dot", width=1.5),
+                annotation_text=f"goal {freq_target}×",
+                annotation_font_color="#6B7280", annotation_font_size=9,
+                annotation_position="top right",
+            )
+            fig.update_yaxis(dtick=1, tickformat="d")
+            _dark_chart(fig, 260)
         else:
             st.info("Log workouts to see frequency trends.")
         st.markdown("</div>", unsafe_allow_html=True)
@@ -1242,13 +1409,38 @@ def show_my_progress():
         _section_hdr("Body Weight Trend")
         wdates = [str(_pd(m["entry_date"])) for m in sorted_metrics]
         wvals  = [m["weight_kg"] for m in sorted_metrics]
-        fig = go.Figure(go.Scatter(x=wdates, y=wvals, mode="lines+markers",
-            line=dict(color="#00FF87", width=2), marker=dict(size=5),
-            fill="tozeroy", fillcolor="rgba(0,255,135,0.04)",
-            hovertemplate="%{x}<br>%{y:.1f} kg<extra></extra>"))
-        fig.add_hline(y=weight_kg, line=dict(color="rgba(255,179,71,0.3)", dash="dot", width=1),
-                      annotation_text="profile weight", annotation_font_color="#9CA3AF", annotation_font_size=10)
-        _dark_chart(fig, 180)
+        w_min = min(wvals) if wvals else weight_kg
+        w_max = max(wvals) if wvals else weight_kg
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(
+            x=wdates, y=wvals,
+            mode="lines+markers",
+            name="Weight",
+            line=dict(color="#00FF87", width=2.5, shape="spline", smoothing=0.6),
+            marker=dict(size=6, color="#00FF87", line=dict(width=1.5, color="#0A0A0A")),
+            fill="tozeroy",
+            fillcolor="rgba(0,255,135,0.05)",
+            hovertemplate="<b>%{x}</b><br>Weight: <b>%{y:.1f} kg</b><extra></extra>",
+        ))
+        fig.add_hline(
+            y=weight_kg,
+            line=dict(color="rgba(255,179,71,0.35)", dash="dot", width=1.5),
+            annotation_text=f"profile {weight_kg:.1f} kg",
+            annotation_font_color="#6B7280", annotation_font_size=9,
+            annotation_position="top right",
+        )
+        if wvals:
+            fig.add_annotation(
+                x=wdates[wvals.index(w_min)], y=w_min,
+                text=f"low {w_min:.1f}kg", showarrow=False,
+                font=dict(size=9, color="#FF6B6B"), yshift=-14,
+            )
+            fig.add_annotation(
+                x=wdates[wvals.index(w_max)], y=w_max,
+                text=f"high {w_max:.1f}kg", showarrow=False,
+                font=dict(size=9, color="#00FF87"), yshift=12,
+            )
+        _dark_chart(fig, 220)
         st.markdown("</div>", unsafe_allow_html=True)
 
 

@@ -10,6 +10,13 @@ from app.config import settings
 
 DATABASE_URL = settings.database_url
 
+# Render (and many hosts) provide postgresql:// but SQLAlchemy async needs
+# postgresql+asyncpg://  — fix it transparently so both formats work.
+if DATABASE_URL.startswith("postgresql://") or DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1).replace(
+        "postgresql://", "postgresql+asyncpg://", 1
+    )
+
 is_sqlite = DATABASE_URL.startswith("sqlite")
 
 if is_sqlite:
