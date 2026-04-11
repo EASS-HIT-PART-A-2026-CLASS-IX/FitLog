@@ -55,13 +55,13 @@ async def create_db_and_tables():
             await conn.exec_driver_sql("PRAGMA synchronous=NORMAL")
             await conn.exec_driver_sql("PRAGMA cache_size=-64000")
             await conn.exec_driver_sql("PRAGMA temp_store=MEMORY")
+            # Migrate old SQLite databases missing profile_id columns
+            await conn.run_sync(_migrate_add_profile_id_sqlite)
         await conn.run_sync(SQLModel.metadata.create_all)
-        # Migrate old databases that are missing profile_id columns
-        await conn.run_sync(_migrate_add_profile_id)
 
 
-def _migrate_add_profile_id(sync_conn):
-    """Add profile_id column and index to existing tables if missing."""
+def _migrate_add_profile_id_sqlite(sync_conn):
+    """Add profile_id column and index to existing SQLite tables if missing."""
     result = sync_conn.exec_driver_sql("PRAGMA table_info(workout_logs)")
     columns = [row[1] for row in result.fetchall()]
     if "profile_id" not in columns:
