@@ -20,11 +20,14 @@ ENV PATH="/root/.local/bin:$PATH"
 
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/pyproject.toml /app/uv.lock ./
-COPY app ./app
+COPY frontend ./frontend
 
-# SQLite DB lives in /app/data (mounted as a volume)
-RUN mkdir -p /app/data
-ENV DATABASE_URL=sqlite+aiosqlite:///data/fitlog.db
+WORKDIR /app/frontend
 
-EXPOSE 8000
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# API_BASE is set at runtime via docker-compose env
+ENV API_BASE=http://localhost:8000
+
+EXPOSE 8501
+CMD ["uv", "run", "--project", "/app", "streamlit", "run", "app.py", \
+     "--server.address=0.0.0.0", "--server.port=8501", \
+     "--server.headless=true", "--browser.gatherUsageStats=false"]

@@ -1,30 +1,7 @@
-version: '3.8'
-
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:16-alpine
-    container_name: fitlog-postgres
-    environment:
-      POSTGRES_USER: fitlog
-      POSTGRES_PASSWORD: fitlog_password
-      POSTGRES_DB: fitlog
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U fitlog"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Redis Cache & Message Broker
   redis:
     image: redis:7-alpine
-    container_name: fitlog-redis
-    ports:
-      - "6379:6379"
+    restart: unless-stopped
     volumes:
       - redis_data:/data
     healthcheck:
@@ -33,45 +10,48 @@ services:
       timeout: 5s
       retries: 5
 
-  # FastAPI Backend
   api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: fitlog-api
+    restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql+asyncpg://fitlog:fitlog_password@postgres:5432/fitlog
+      DATABASE_URL: sqlite+aiosqlite:///data/fitlog.db
       REDIS_URL: redis://redis:6379/0
       GROQ_API_KEY: ${GROQ_API_KEY}
-      SECRET_KEY: ${SECRET_KEY:-your-secret-key-change-in-production}
+      SECRET_KEY: ${SECRET_KEY}
+      APP_ENV: production
     ports:
       - "8000:8000"
+    volumes:
+      - db_data:/app/data
     depends_on:
-      postgres:
-        condition: service_healthy
       redis:
         condition: service_healthy
-    command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
-    volumes:
-      - .:/app
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
-  # Celery Worker for async tasks
-  worker:
+  frontend:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: fitlog-worker
+      dockerfile: Dockerfile.frontend
+    restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql+asyncpg://fitlog:fitlog_password@postgres:5432/fitlog
-      REDIS_URL: redis://redis:6379/0
-      GROQ_API_KEY: ${GROQ_API_KEY}
+      # Server-side Python calls go through internal Docker network
+      API_BASE: http://api:8000
+      # Browser-side JS calls — must be reachable from the user's browser
+      # Change to your server's public IP/domain when deploying remotely
+      PUBLIC_API_BASE: ${PUBLIC_API_BASE:-http://localhost:8000}
+    ports:
+      - "8501:8501"
     depends_on:
-      - redis
-      - postgres
-    command: uv run celery -A app.tasks worker --loglevel=info
-    volumes:
-      - .:/app
+      api:
+        condition: service_healthy
 
 volumes:
-  postgres_data:
+  db_data:
   redis_data:

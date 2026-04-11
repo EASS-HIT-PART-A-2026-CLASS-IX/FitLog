@@ -22,11 +22,12 @@ try:
 except ImportError:
     HAS_SAC = False
 
+import os
 import _ai_fab
 
 # ── Config ────────────────────────────────────────────────────
 
-API_BASE = "http://localhost:8000"
+API_BASE = os.environ.get("API_BASE", "http://localhost:8000")
 
 st.set_page_config(
     page_title="FitLog",

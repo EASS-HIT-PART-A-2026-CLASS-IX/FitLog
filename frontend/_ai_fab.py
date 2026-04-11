@@ -3,8 +3,14 @@ AI Coach floating action button — injected into the Streamlit parent page.
 Uses components.html (height=0 iframe) + window.parent to run JS.
 """
 
+import os
 import streamlit.components.v1 as components
 import streamlit as st
+
+# Server-side URL (Python/httpx): may be internal Docker hostname
+_API_BASE = os.environ.get("API_BASE", "http://localhost:8000")
+# Browser-side URL (JavaScript fetch): must be reachable from the user's browser
+_PUBLIC_API_BASE = os.environ.get("PUBLIC_API_BASE", "http://localhost:8000")
 
 
 _FAB_CSS = """
@@ -121,7 +127,7 @@ def render(token: str, pid: str) -> None:
     inp.value='';btn.disabled=true;_aiAdd('user',txt);
     var typing=_aiTyping();
     try{{
-      var res=await fetch('http://localhost:8000/ai/chat',{{method:'POST',
+      var res=await fetch('{_PUBLIC_API_BASE}/ai/chat',{{method:'POST',
         headers:{{'Content-Type':'application/json','Authorization':'Bearer '+c.token}},
         body:JSON.stringify({{profile_id:c.pid,message:txt}})}});
       typing.remove();
