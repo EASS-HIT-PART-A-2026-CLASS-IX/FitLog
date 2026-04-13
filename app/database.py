@@ -1,47 +1,26 @@
 """
-Database initialization and connection management with performance optimizations.
+Database initialization and connection management.
 """
 
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from sqlmodel import SQLModel
 
 from app.config import settings
 
 DATABASE_URL = settings.database_url
 
-# Render (and many hosts) provide postgresql:// but SQLAlchemy async needs
-# postgresql+asyncpg://  — fix it transparently so both formats work.
-if DATABASE_URL.startswith("postgresql://") or DATABASE_URL.startswith("postgres://"):
-    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1).replace(
-        "postgresql://", "postgresql+asyncpg://", 1
-    )
-
-is_sqlite = DATABASE_URL.startswith("sqlite")
-
-if is_sqlite:
-    from sqlalchemy.pool import StaticPool
-
-    engine = create_async_engine(
-        DATABASE_URL,
-        echo=False,
-        future=True,
-        connect_args={
-            "timeout": 15,
-            "check_same_thread": False,
-        },
-        poolclass=StaticPool,
-    )
-else:
-    engine = create_async_engine(
-        DATABASE_URL,
-        echo=False,
-        future=True,
-        pool_pre_ping=True,
-        pool_size=10,
-        max_overflow=20,
-        pool_recycle=3600,
-    )
+engine = create_async_engine(
+    DATABASE_URL,
+    echo=False,
+    future=True,
+    connect_args={
+        "timeout": 15,
+        "check_same_thread": False,
+    },
+    poolclass=StaticPool,
+)
 
 async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
@@ -49,14 +28,11 @@ async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit
 async def create_db_and_tables():
     """Create all database tables."""
     async with engine.begin() as conn:
-        # Enable WAL mode for concurrent reads (SQLite only)
-        if is_sqlite:
-            await conn.exec_driver_sql("PRAGMA journal_mode=WAL")
-            await conn.exec_driver_sql("PRAGMA synchronous=NORMAL")
-            await conn.exec_driver_sql("PRAGMA cache_size=-64000")
-            await conn.exec_driver_sql("PRAGMA temp_store=MEMORY")
-            # Migrate old SQLite databases missing profile_id columns
-            await conn.run_sync(_migrate_add_profile_id_sqlite)
+        await conn.exec_driver_sql("PRAGMA journal_mode=WAL")
+        await conn.exec_driver_sql("PRAGMA synchronous=NORMAL")
+        await conn.exec_driver_sql("PRAGMA cache_size=-64000")
+        await conn.exec_driver_sql("PRAGMA temp_store=MEMORY")
+        await conn.run_sync(_migrate_add_profile_id_sqlite)
         await conn.run_sync(SQLModel.metadata.create_all)
 
 

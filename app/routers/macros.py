@@ -158,7 +158,7 @@ async def list_macros(
     if end_date:
         stmt = stmt.where(MacroEntry.entry_date <= str(end_date))
 
-    stmt = stmt.offset(offset).limit(limit)
+    stmt = stmt.order_by(MacroEntry.entry_date.desc()).offset(offset).limit(limit)
     result = await session.execute(stmt)
     return result.scalars().all()
 

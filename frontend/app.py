@@ -27,7 +27,7 @@ import _ai_fab
 
 # ── Config ────────────────────────────────────────────────────
 
-API_BASE = os.environ.get("API_BASE", "http://localhost:8000")
+API_BASE = os.environ.get("API_BASE", "http://127.0.0.1:8000")
 
 st.set_page_config(
     page_title="FitLog",
@@ -291,46 +291,53 @@ section[data-testid="stSidebar"],
   color: #0A0A0A !important; font-weight: 700 !important;
 }
 
-/* ── Sidebar nav buttons (inactive items) ── */
-section[data-testid="stSidebar"] .stButton:not(:last-child) > button {
+/* ── Sidebar: collapse nav item wrapper gaps ── */
+section[data-testid="stSidebar"] .stButton {
+  margin-bottom: 0 !important;
+}
+/* Collapse the stMarkdown wrapper around active nav items */
+section[data-testid="stSidebar"] .stMarkdown:has([data-nav-active]) {
+  margin-bottom: 0 !important;
+  padding: 0 !important;
+}
+section[data-testid="stSidebar"] .stMarkdown:has([data-nav-active]) > div {
+  margin-bottom: 0 !important;
+  padding: 0 !important;
+}
+section[data-testid="stSidebar"] .stButton > button {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
   background: transparent !important;
-  color: #6B7280 !important;
   border: none !important;
   box-shadow: none !important;
-  justify-content: flex-start !important;
-  padding: 0.6rem 1rem !important;
-  font-size: 0.82rem !important;
+  border-radius: 8px !important;
+  padding: 0.55rem 0.9rem !important;
+  font-size: 0.83rem !important;
   font-weight: 400 !important;
   letter-spacing: 0.01em !important;
-  border-radius: 7px !important;
-  margin-bottom: 1px !important;
-  border-left: 2px solid transparent !important;
-  transition: all 0.15s !important;
-}
-section[data-testid="stSidebar"] .stButton:not(:last-child) > button:hover {
-  background: rgba(255,255,255,0.04) !important;
-  color: #E5E7EB !important;
+  color: #6B7280 !important;
+  transition: background 0.15s, color 0.15s !important;
   transform: none !important;
+}
+section[data-testid="stSidebar"] .stButton > button:hover {
+  background: rgba(255,255,255,0.05) !important;
+  color: #D1D5DB !important;
   box-shadow: none !important;
-  border-left: 2px solid rgba(0,255,135,0.35) !important;
+  transform: none !important;
 }
 /* ── Sidebar sign-out button ── */
 section[data-testid="stSidebar"] .stButton:last-child > button {
-  background: transparent !important;
-  color: #6B7280 !important;
-  border: 1px solid #1E1E1E !important;
-  box-shadow: none !important;
-  font-size: 0.78rem !important;
-  font-weight: 400 !important;
-  letter-spacing: 0.04em !important;
+  color: #4B5563 !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.05em !important;
   text-transform: uppercase !important;
+  margin-top: 0.25rem !important;
 }
 section[data-testid="stSidebar"] .stButton:last-child > button:hover {
-  background: rgba(255,107,107,0.06) !important;
+  background: rgba(255,107,107,0.07) !important;
   color: var(--danger) !important;
-  border-color: rgba(255,107,107,0.3) !important;
-  transform: none !important;
-  box-shadow: none !important;
 }
 
 /* ── Expander ── */
@@ -416,6 +423,117 @@ label { color: var(--muted) !important; }
 .section-rule::after {
   content: ''; flex: 1; height: 1px; background: var(--border);
 }
+
+/* ════════════════════════════════════════
+   MY PROGRESS — animated analytics layer
+   ════════════════════════════════════════ */
+@keyframes ringReveal {
+  from { stroke-dashoffset: var(--dash-len); }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes fitSlideUp {
+  from { opacity:0; transform:translateY(18px); }
+  to   { opacity:1; transform:translateY(0);    }
+}
+@keyframes fitPulseGlow {
+  0%,100% { box-shadow: 0 0 8px rgba(255,179,71,.1); }
+  50%      { box-shadow: 0 0 26px rgba(255,179,71,.45); }
+}
+@keyframes barReveal {
+  from { width: 0 !important; }
+}
+
+/* ── Score cockpit ── */
+.score-cockpit {
+  background: linear-gradient(135deg,#0D1F15 0%,#0A0A0A 55%,#0A0A1F 100%);
+  border: 1px solid rgba(0,255,135,.16);
+  border-radius: 16px;
+  padding: 1.75rem 2rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+  box-shadow: 0 8px 48px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.03);
+  animation: fitSlideUp .5s ease both;
+}
+.score-ring-wrap { flex-shrink:0; }
+.score-ring-wrap svg { display:block; }
+.score-ring-label {
+  font-size:.6rem; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted);
+  text-align:center; margin-top:.4rem;
+}
+.motivation-box { flex:1; min-width:180px; }
+.motivation-grade {
+  font-size:3.75rem; font-weight:900; line-height:1;
+  letter-spacing:-.04em; margin-bottom:.2rem;
+}
+.motivation-text { font-size:.84rem; color:var(--muted); line-height:1.55; }
+
+/* ── Streak badge ── */
+.streak-badge {
+  display:inline-flex; align-items:center; gap:.35rem;
+  background:rgba(255,179,71,.1); border:1px solid rgba(255,179,71,.25);
+  border-radius:20px; padding:.28rem .7rem;
+  font-size:.78rem; font-weight:700; color:#FFB347;
+  margin-bottom:.7rem;
+  animation: fitPulseGlow 2.5s ease-in-out infinite;
+}
+
+/* ── Ring cards ── */
+.ring-card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:14px; padding:1.1rem .85rem;
+  display:flex; flex-direction:column; align-items:center; gap:.4rem;
+  transition:border-color .2s, transform .2s, box-shadow .2s;
+  animation:fitSlideUp .4s ease both;
+}
+.ring-card:hover {
+  border-color:rgba(0,255,135,.28);
+  transform:translateY(-3px);
+  box-shadow:0 8px 28px rgba(0,0,0,.5);
+}
+.ring-card-label {
+  font-size:.63rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:.09em; color:var(--muted);
+}
+.ring-card-sub { font-size:.66rem; color:var(--muted); text-align:center; }
+
+/* ── Performance bars ── */
+.perf-bar-row { margin-bottom:1rem; }
+.perf-bar-header {
+  display:flex; justify-content:space-between; align-items:baseline;
+  margin-bottom:.4rem;
+}
+.perf-bar-name { font-size:.85rem; font-weight:600; color:var(--text); }
+.perf-bar-pct  { font-size:.85rem; font-weight:700; }
+.perf-bar-track {
+  height:12px; background:var(--border2); border-radius:6px; overflow:hidden;
+}
+.perf-bar-fill {
+  height:100%; border-radius:6px;
+  animation:barReveal .75s cubic-bezier(.34,1.56,.64,1) both;
+}
+
+/* ── Section divider ── */
+.progress-hdr {
+  display:flex; align-items:center; gap:.75rem; margin-bottom:1rem; margin-top:.25rem;
+}
+.progress-hdr-line { flex:1; height:1px; background:var(--border); }
+.progress-hdr-text {
+  font-size:.65rem; font-weight:700; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.09em; white-space:nowrap;
+}
+
+/* ── Empty state ── */
+.empty-state {
+  text-align:center; padding:2.5rem 1rem;
+  animation:fitSlideUp .4s ease both;
+}
+.empty-state-icon { font-size:2.5rem; margin-bottom:.75rem; }
+.empty-state-title { font-size:1rem; font-weight:700; color:var(--text); margin-bottom:.35rem; }
+.empty-state-sub { font-size:.82rem; color:var(--muted); }
 </style>
 """
 
@@ -543,7 +661,7 @@ def get_analytics_macros(token: str, pid: str): return _get("/macros/", {"limit"
 def get_analytics_metrics(token: str, pid: str): return _get("/body-metrics/", {"limit": 500, "profile_id": pid}) or []
 
 @st.cache_data(ttl=120)
-def get_analytics_steps(token: str, pid: str): return _get("/steps/", {"limit": 90, "profile_id": pid}) or []
+def get_analytics_steps(token: str, pid: str): return _get("/steps/", {"limit": 200, "profile_id": pid}) or []
 
 
 def _create(endpoint: str, data: dict, clear_fn=None):
@@ -653,6 +771,68 @@ def _chart_legend(met_label: str = "Goal met", partial_label: str = "Within 30%"
         f'<span class="legend-dot" style="background:#FF6B6B;margin-left:.25rem;"></span><span class="legend-label">{miss_label}</span>'
         f'</div>',
         unsafe_allow_html=True,
+    )
+
+
+def _ring_card(label: str, pct: float, val_str: str, sub: str, color: str, delay: str = "0s") -> str:
+    """Animated SVG radial-progress ring card for a KPI metric."""
+    r, circ = 40, 251.33
+    filled = min(pct / 100.0, 1.0) * circ
+    gap    = max(circ - filled, 0.01)
+    return (
+        f'<div class="ring-card" style="animation-delay:{delay};">'
+        f'<div class="ring-card-label">{label}</div>'
+        f'<svg width="96" height="96" viewBox="0 0 96 96" style="overflow:visible;">'
+        f'<circle cx="48" cy="48" r="{r}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8"/>'
+        f'<circle cx="48" cy="48" r="{r}" fill="none" stroke="{color}" stroke-width="8"'
+        f' stroke-linecap="round" stroke-dasharray="{filled:.2f} {gap:.2f}"'
+        f' transform="rotate(-90 48 48)"'
+        f' style="--dash-len:{filled:.2f};animation:ringReveal 0.85s cubic-bezier(0.34,1.56,0.64,1) {delay} both;'
+        f'filter:drop-shadow(0 0 5px {color}55);"/>'
+        f'<text x="48" y="44" text-anchor="middle" dominant-baseline="middle"'
+        f' fill="{color}" font-size="15" font-weight="800" font-family="Inter,sans-serif">{int(pct)}%</text>'
+        f'<text x="48" y="59" text-anchor="middle" dominant-baseline="middle"'
+        f' fill="#6B7280" font-size="8" font-family="Inter,sans-serif">{val_str}</text>'
+        f'</svg>'
+        f'<div class="ring-card-sub">{sub}</div>'
+        f'</div>'
+    )
+
+
+def _score_cockpit_html(score: int, grade: str, grade_color: str, motivation: str, streak: int) -> str:
+    """Large SVG score ring + grade + motivation banner."""
+    r, circ = 50, 314.16
+    filled = score / 100.0 * circ
+    gap    = max(circ - filled, 0.01)
+    streak_html = (
+        f'<div class="streak-badge">🔥 {streak}-day streak</div>'
+        if streak > 0 else ''
+    )
+    return (
+        f'<div class="score-cockpit">'
+        f'<div class="score-ring-wrap">'
+        f'<svg width="138" height="138" viewBox="0 0 138 138" style="overflow:visible;">'
+        f'<circle cx="69" cy="69" r="{r}" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="10"/>'
+        f'<circle cx="69" cy="69" r="{r}" fill="none" stroke="{grade_color}" stroke-width="10"'
+        f' stroke-linecap="round" stroke-dasharray="{filled:.2f} {gap:.2f}"'
+        f' transform="rotate(-90 69 69)"'
+        f' style="--dash-len:{filled:.2f};animation:ringReveal 1.1s cubic-bezier(0.34,1.56,0.64,1) 0.1s both;'
+        f'filter:drop-shadow(0 0 14px {grade_color}60);"/>'
+        f'<text x="69" y="62" text-anchor="middle" dominant-baseline="middle"'
+        f' fill="{grade_color}" font-size="30" font-weight="900" font-family="Inter,sans-serif">{score}</text>'
+        f'<text x="69" y="80" text-anchor="middle" dominant-baseline="middle"'
+        f' fill="#4B5563" font-size="9.5" font-family="Inter,sans-serif">out of 100</text>'
+        f'</svg>'
+        f'<div class="score-ring-label">Performance Score</div>'
+        f'</div>'
+        f'<div class="motivation-box">'
+        f'{streak_html}'
+        f'<div class="motivation-grade" style="color:{grade_color};">{grade}</div>'
+        f'<div style="font-size:.7rem;font-weight:700;color:var(--muted);letter-spacing:.07em;'
+        f'text-transform:uppercase;margin-bottom:.35rem;">Performance Grade</div>'
+        f'<div class="motivation-text">{motivation}</div>'
+        f'</div>'
+        f'</div>'
     )
 
 
@@ -1127,24 +1307,28 @@ def show_my_progress():
         st.warning("Install plotly to view analytics: `pip install plotly`")
         return
     token = st.session_state.token
-    pid = str(st.session_state.selected_profile_id or "")
+    pid   = str(st.session_state.selected_profile_id or "")
     if not pid:
-        st.warning("Select a profile to view your analytics.")
+        st.markdown(
+            '<div class="empty-state">'
+            '<div class="empty-state-icon">📊</div>'
+            '<div class="empty-state-title">No profile selected</div>'
+            '<div class="empty-state-sub">Create a profile to unlock your performance score and analytics.</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        if st.button("Create Profile", key="prog_create_profile", use_container_width=False):
+            st.session_state.active_section = "Profile"
+            st.rerun()
         return
 
     profile_name = st.session_state.get("selected_profile_name", "")
-
     workouts     = get_analytics_workouts(token, pid)
     metrics      = get_analytics_metrics(token, pid)
     macros       = get_analytics_macros(token, pid)
     step_data    = get_analytics_steps(token, pid)
     profile_list = get_profiles(token)
-
-    today = date.today()
-
-    # ── Time range selector (drives all panels) ───────────────
-    range_opt  = st.radio("Range", ["2 weeks", "1 month", "3 months"], horizontal=True, index=1, key="progress_range")
-    range_days = {"2 weeks": 14, "1 month": 30, "3 months": 90}[range_opt]
+    today        = date.today()
 
     def _pd(v) -> date | None:
         try:
@@ -1152,294 +1336,345 @@ def show_my_progress():
         except Exception:
             return None
 
-    # ── Derive targets (user goals override formula defaults) ─
+    # ── Derive targets ────────────────────────────────────────
     profile_obj = next((p for p in profile_list if p.get("id") == pid), {})
     weight_kg  = float(profile_obj.get("weight_kg") or 75)
     height_cm  = float(profile_obj.get("height_cm") or 175)
     age        = int(profile_obj.get("age") or 30)
     gender     = (profile_obj.get("gender") or "male").lower()
     goal       = (profile_obj.get("goal") or "fit").lower()
-
-    bmr = 10 * weight_kg + 6.25 * height_cm - 5 * age + (5 if gender == "male" else -161)
-    tdee = bmr * 1.55
+    bmr        = 10 * weight_kg + 6.25 * height_cm - 5 * age + (5 if gender == "male" else -161)
+    tdee       = bmr * 1.55
     auto_cal     = round(tdee + (300 if goal == "muscle" else -500 if goal == "weight_loss" else 0))
     auto_protein = round(weight_kg * (2.0 if goal == "muscle" else 1.6))
 
-    user_goals = get_goals(token, pid)
+    user_goals       = get_goals(token, pid)
     steps_target     = int(user_goals.get("daily_steps") or 10000)
     freq_target      = int(user_goals.get("weekly_workouts") or 4)
     cal_target       = int(user_goals.get("daily_calories") or auto_cal)
     protein_target_g = float(user_goals.get("daily_protein_g") or auto_protein)
 
-    # ── Header ───────────────────────────────────────────────
-    st.markdown(f"""
-    <div class="welcome-box">
-      <h2>My Progress</h2>
-      <p>Goal-vs-actual analysis for <strong>{profile_name}</strong></p>
-    </div>""", unsafe_allow_html=True)
-
-    # ── Summary KPIs ─────────────────────────────────────────
-    week_start = today - timedelta(days=today.weekday())
-    seven_ago  = today - timedelta(days=6)
-    workouts_week  = sum(1 for w in workouts if (_pd(w.get("log_date")) or date.min) >= week_start)
-    recent_macros  = [m for m in macros if (_pd(m.get("entry_date")) or date.min) >= seven_ago]
-    avg_cals_7d    = sum(m.get("calories",0) for m in recent_macros) / max(len(recent_macros),1) if recent_macros else 0.0
-    avg_prot_7d    = sum(m.get("protein_g",0) for m in recent_macros) / max(len(recent_macros),1) if recent_macros else 0.0
-    recent_steps   = [s for s in step_data if (_pd(s.get("entry_date")) or date.min) >= seven_ago]
-    avg_steps_7d   = sum(s.get("steps",0) for s in recent_steps) / max(len(recent_steps),1) if recent_steps else 0.0
-
+    # ── Streak (always all-time, not range-dependent) ─────────
     streak = 0
     all_dates = {w.get("log_date") for w in workouts} | {m.get("entry_date") for m in macros}
     chk = today
     while str(chk) in all_dates:
         streak += 1; chk -= timedelta(days=1)
 
-    k1, k2, k3, k4 = st.columns(4)
-    with k1: _kpi("Streak", f"{streak}d", "consecutive active days")
-    with k2: _kpi("Workouts / Week", f"{workouts_week}/{freq_target}", "this week vs goal", "#00C2FF")
-    with k3: _kpi("Avg Calories (7d)", f"{avg_cals_7d:,.0f}" if avg_cals_7d else "—", f"goal {cal_target:,} kcal", "#FFB347")
-    with k4: _kpi("Avg Steps (7d)", f"{avg_steps_7d:,.0f}" if avg_steps_7d else "—", f"goal {steps_target:,}/day", "#FF6B6B")
+    # ── Time range selector (drives everything below) ─────────
+    rc, _ = st.columns([3, 2])
+    with rc:
+        range_opt = st.radio(
+            "Time range",
+            ["1 week", "2 weeks", "1 month", "3 months", "Custom"],
+            horizontal=True, index=2, key="progress_range",
+        )
 
-    # ── Weekly snapshot summary ───────────────────────────────
-    last_7_step_days  = sum(1 for s in step_data if (_pd(s.get("entry_date")) or date.min) >= seven_ago and s.get("steps",0) >= steps_target)
-    last_7_prot_days  = sum(1 for m in recent_macros if m.get("protein_g", 0) >= protein_target_g)
-    cal_on_target     = sum(1 for m in recent_macros if abs(m.get("calories",0) - cal_target) / max(cal_target,1) <= 0.10)
-    all_tracked_days  = len({(s.get("entry_date") or "") for s in recent_steps} | {(m.get("entry_date") or "") for m in recent_macros})
-    summary_parts = []
-    if recent_steps:
-        summary_parts.append(f"steps goal hit {last_7_step_days}/7 days")
-    if recent_macros:
-        summary_parts.append(f"protein goal hit {last_7_prot_days}/{len(recent_macros)} entries")
-        summary_parts.append(f"calories on target {cal_on_target}/{len(recent_macros)} days")
-    summary_parts.append(f"workouts this week: {workouts_week}/{freq_target}")
-    if summary_parts:
-        step_pct  = min(100, int(avg_steps_7d / steps_target * 100)) if steps_target else 0
-        cal_pct   = min(100, int(avg_cals_7d  / cal_target  * 100)) if cal_target   else 0
-        prot_pct  = min(100, int(avg_prot_7d  / protein_target_g * 100)) if protein_target_g else 0
-        freq_pct  = min(100, int(workouts_week / freq_target * 100)) if freq_target else 0
+    if range_opt == "Custom":
+        cc1, cc2, _ = st.columns([1, 1, 2])
+        with cc1:
+            custom_start = st.date_input("From", value=today - timedelta(days=29),
+                                         max_value=today, key="progress_custom_start")
+        with cc2:
+            custom_end = st.date_input("To", value=today,
+                                       max_value=today, key="progress_custom_end")
+        if custom_start > custom_end:
+            st.warning("Start date must be before end date.")
+            custom_start = custom_end
+        range_start = custom_start
+        range_end   = custom_end
+        range_days  = (custom_end - custom_start).days + 1
+    else:
+        range_days  = {"1 week": 7, "2 weeks": 14, "1 month": 30, "3 months": 90}[range_opt]
+        range_start = today - timedelta(days=range_days - 1)
+        range_end   = today
 
-        def _mini_bar(pct: int, color: str) -> str:
-            return (
-                f'<div style="height:3px;background:var(--border2);border-radius:2px;width:60px;margin-top:3px;">'
-                f'<div style="height:100%;width:{pct}%;background:{color};border-radius:2px;transition:width .4s;"></div></div>'
-            )
+    # ── Metrics for the selected range ───────────────────────
+    range_macros   = [m for m in macros    if range_start <= (_pd(m.get("entry_date")) or date.min) <= range_end]
+    range_steps    = [s for s in step_data if range_start <= (_pd(s.get("entry_date")) or date.min) <= range_end]
+    range_workouts = [w for w in workouts  if range_start <= (_pd(w.get("log_date"))   or date.min) <= range_end]
 
+    avg_cals  = sum(m.get("calories",  0) for m in range_macros) / max(len(range_macros), 1) if range_macros else 0.0
+    avg_prot  = sum(m.get("protein_g", 0) for m in range_macros) / max(len(range_macros), 1) if range_macros else 0.0
+    avg_steps = sum(s.get("steps",     0) for s in range_steps)  / max(len(range_steps),  1) if range_steps  else 0.0
+
+    # Workout frequency: sessions per week over the range
+    weeks_in_range      = max(range_days / 7, 1)
+    avg_workouts_per_wk = len(range_workouts) / weeks_in_range
+
+    # ── Score calculation (range-based) ──────────────────────
+    step_pct = min(100, int(avg_steps / steps_target * 100)) if steps_target and range_steps else 0
+    cal_pct  = max(0, 100 - int(abs(avg_cals - cal_target) / max(cal_target, 1) * 100)) if avg_cals else 0
+    prot_pct = min(100, int(avg_prot / protein_target_g * 100)) if protein_target_g and avg_prot else 0
+    freq_pct = min(100, int(avg_workouts_per_wk / max(freq_target, 1) * 100))
+    score    = min(100, int((step_pct + cal_pct + prot_pct + freq_pct) / 4) + min(streak, 10))
+
+    if score >= 85:   grade, grade_color = "A", "#00FF87"
+    elif score >= 70: grade, grade_color = "B", "#00C2FF"
+    elif score >= 55: grade, grade_color = "C", "#FFB347"
+    elif score >= 35: grade, grade_color = "D", "#FF8C00"
+    else:             grade, grade_color = "F", "#FF6B6B"
+
+    motivation = {
+        "A": "Elite performance. You're crushing every goal — stay relentless.",
+        "B": "Strong work. Tighten one metric to break into elite territory.",
+        "C": "Building momentum. Consistency now means visible results in weeks.",
+        "D": "Every logged entry counts. Keep showing up — progress compounds.",
+        "F": "Today is the best time to start. One log changes everything.",
+    }.get(grade, "Keep pushing forward.")
+
+    # ── Score Cockpit ─────────────────────────────────────────
+    st.markdown(_score_cockpit_html(score, grade, grade_color, motivation, streak), unsafe_allow_html=True)
+
+    # ── Ring Cards ────────────────────────────────────────────
+    range_label = range_opt if range_opt != "Custom" else "Custom range"
+    st.markdown(
+        f'<div class="progress-hdr"><div class="progress-hdr-text">Goal Tracking — {range_label}</div>'
+        f'<div class="progress-hdr-line"></div></div>',
+        unsafe_allow_html=True,
+    )
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.markdown(_ring_card(
+            "Steps", step_pct,
+            f"{avg_steps:,.0f} avg/day" if range_steps else "No data",
+            f"Goal {steps_target:,}/day", "#00FF87", "0s",
+        ), unsafe_allow_html=True)
+    with c2:
+        st.markdown(_ring_card(
+            "Calories", cal_pct,
+            f"{avg_cals:,.0f} kcal avg" if avg_cals else "No data",
+            f"Target {cal_target:,} kcal", "#00C2FF", "0.07s",
+        ), unsafe_allow_html=True)
+    with c3:
+        st.markdown(_ring_card(
+            "Protein", prot_pct,
+            f"{avg_prot:.0f}g avg/day" if avg_prot else "No data",
+            f"Target {protein_target_g:.0f}g/day", "#FFB347", "0.14s",
+        ), unsafe_allow_html=True)
+    with c4:
+        sessions_label = f"{len(range_workouts)} sessions"
+        st.markdown(_ring_card(
+            "Workouts", freq_pct,
+            sessions_label,
+            f"Goal {freq_target}×/wk avg",
+            "#00FF87" if freq_pct >= 100 else "#FF6B6B", "0.21s",
+        ), unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── Performance Bars ─────────────────────────────────────
+    st.markdown('<div class="card card-accent">', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="progress-hdr"><div class="progress-hdr-text">Performance Breakdown — {range_label}</div>'
+        f'<div class="progress-hdr-line"></div></div>',
+        unsafe_allow_html=True,
+    )
+
+    def _perf_bar(name: str, pct: int, val_label: str, color: str, delay: str) -> None:
+        capped = min(pct, 100)
         st.markdown(
-            f'<div class="card" style="border-left:3px solid var(--accent);padding:.85rem 1.1rem;margin-bottom:.5rem;">'
-            f'<div style="font-size:.7rem;font-weight:700;color:var(--muted);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.6rem;">Last 7 Days</div>'
-            f'<div style="display:flex;gap:1.5rem;flex-wrap:wrap;">'
-            f'<div><div style="font-size:.72rem;color:var(--muted);">Steps</div>'
-            f'<div style="font-size:.9rem;font-weight:700;color:{"#00FF87" if step_pct>=97 else "#FFB347" if step_pct>=70 else "#FF6B6B"};">{step_pct}%</div>'
-            f'{_mini_bar(step_pct, "#00FF87" if step_pct>=97 else "#FFB347" if step_pct>=70 else "#FF6B6B")}</div>'
-            f'<div><div style="font-size:.72rem;color:var(--muted);">Calories</div>'
-            f'<div style="font-size:.9rem;font-weight:700;color:{"#00C2FF" if 90<=cal_pct<=110 else "#FFB347" if 75<=cal_pct<=125 else "#FF6B6B"};">{cal_pct}%</div>'
-            f'{_mini_bar(min(cal_pct,100), "#00C2FF" if 90<=cal_pct<=110 else "#FFB347" if 75<=cal_pct<=125 else "#FF6B6B")}</div>'
-            f'<div><div style="font-size:.72rem;color:var(--muted);">Protein</div>'
-            f'<div style="font-size:.9rem;font-weight:700;color:{"#00FF87" if prot_pct>=97 else "#FFB347" if prot_pct>=70 else "#FF6B6B"};">{prot_pct}%</div>'
-            f'{_mini_bar(prot_pct, "#00FF87" if prot_pct>=97 else "#FFB347" if prot_pct>=70 else "#FF6B6B")}</div>'
-            f'<div><div style="font-size:.72rem;color:var(--muted);">Workouts</div>'
-            f'<div style="font-size:.9rem;font-weight:700;color:{"#00FF87" if freq_pct>=100 else "#FFB347" if freq_pct>=70 else "#FF6B6B"};">{workouts_week}/{freq_target}</div>'
-            f'{_mini_bar(freq_pct, "#00FF87" if freq_pct>=100 else "#FFB347" if freq_pct>=70 else "#FF6B6B")}</div>'
+            f'<div class="perf-bar-row">'
+            f'<div class="perf-bar-header">'
+            f'<span class="perf-bar-name">{name}</span>'
+            f'<span class="perf-bar-pct" style="color:{color};">{pct}%'
+            f'&nbsp;<span style="font-size:.75rem;color:var(--muted);font-weight:400;">{val_label}</span></span>'
+            f'</div>'
+            f'<div class="perf-bar-track">'
+            f'<div class="perf-bar-fill" style="width:{capped}%;background:{color};animation-delay:{delay};"></div>'
             f'</div></div>',
             unsafe_allow_html=True,
         )
 
+    _perf_bar("Steps",
+              step_pct,
+              f"{avg_steps:,.0f} / {steps_target:,} avg/day" if range_steps else "No data yet — log in Wellness",
+              "#00FF87", "0s")
+    _perf_bar("Calorie accuracy",
+              cal_pct,
+              f"{avg_cals:,.0f} / {cal_target:,} kcal avg/day" if avg_cals else "No data yet — log in Nutrition",
+              "#00C2FF", "0.06s")
+    _perf_bar("Protein intake",
+              prot_pct,
+              f"{avg_prot:.0f}g / {protein_target_g:.0f}g avg/day" if avg_prot else "No data yet — log in Nutrition",
+              "#FFB347", "0.12s")
+    _perf_bar("Workout frequency",
+              freq_pct,
+              f"{len(range_workouts)} sessions · {avg_workouts_per_wk:.1f}/wk avg vs goal {freq_target}/wk",
+              "#00FF87" if freq_pct >= 100 else "#FF6B6B", "0.18s")
+
+    st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # ── 2×2 goal-vs-actual panels ────────────────────────────
+    # ── 2×2 Charts ────────────────────────────────────────────
+    st.markdown(
+        '<div class="progress-hdr"><div class="progress-hdr-text">Goal vs Actual</div>'
+        '<div class="progress-hdr-line"></div></div>',
+        unsafe_allow_html=True,
+    )
+
     row1_l, row1_r = st.columns(2)
 
-    # Panel 1 — Steps
+    x_range = [str(range_start), str(range_end)]
+
     with row1_l:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         _section_hdr(f"Steps — Goal {steps_target:,}/day")
-        range_start = today - timedelta(days=range_days - 1)
         sd = sorted(
-            [s for s in step_data if (_pd(s.get("entry_date")) or date.min) >= range_start],
+            [s for s in step_data if range_start <= (_pd(s.get("entry_date")) or date.min) <= range_end],
             key=lambda x: _pd(x.get("entry_date")) or date.min,
         )
         if sd:
-            _chart_legend("Hit goal", "70–97%", "Below 70%")
             sdates = [str(_pd(s["entry_date"])) for s in sd]
             svals  = [s.get("steps", 0) for s in sd]
-            colors = [_goal_color(v, steps_target) for v in svals]
             fig = go.Figure()
-            fig.add_trace(go.Bar(
-                x=sdates, y=svals, name="Steps",
-                marker=dict(color=colors, opacity=0.85, line=dict(width=0)),
-                text=[f"{v:,}" for v in svals],
-                textposition="outside",
-                textfont=dict(size=9, color="#9CA3AF"),
+            fig.add_trace(go.Scatter(
+                x=sdates, y=svals, mode="lines+markers", name="Steps",
+                line=dict(color="#00FF87", width=2, shape="spline", smoothing=0.5),
+                marker=dict(size=6, color=[_goal_color(v, steps_target) for v in svals],
+                            line=dict(width=1.5, color="#0A0A0A")),
+                fill="tozeroy", fillcolor="rgba(0,255,135,0.06)",
                 hovertemplate="<b>%{x}</b><br>Steps: <b>%{y:,}</b><br>Goal: " + f"{steps_target:,}" + "<extra></extra>",
             ))
-            fig.add_hline(
-                y=steps_target,
-                line=dict(color="rgba(0,255,135,0.45)", dash="dot", width=1.5),
-                annotation_text=f"goal {steps_target:,}",
-                annotation_font_color="#6B7280", annotation_font_size=9,
-                annotation_position="top right",
-            )
-            fig.update_yaxis(tickformat=",")
+            fig.add_hline(y=steps_target, line=dict(color="rgba(0,255,135,0.45)", dash="dot", width=1.5),
+                          annotation_text=f"goal {steps_target:,}", annotation_font_color="#6B7280",
+                          annotation_font_size=9, annotation_position="top right")
+            fig.update_xaxes(range=x_range)
+            fig.update_yaxes(tickformat=",")
             _dark_chart(fig, 260)
         else:
-            st.info("Log daily steps in Wellness → Steps.")
+            st.markdown('<div class="empty-state" style="padding:1.5rem;"><div class="empty-state-icon">👟</div>'
+                        '<div class="empty-state-sub">Log steps in <strong>Wellness → Steps</strong></div></div>',
+                        unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Panel 2 — Calories
     with row1_r:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         _section_hdr(f"Calories — Target {cal_target:,} kcal/day")
         cal_sorted = sorted(
-            [m for m in macros if (_pd(m.get("entry_date")) or date.min) >= range_start],
+            [m for m in macros if range_start <= (_pd(m.get("entry_date")) or date.min) <= range_end],
             key=lambda x: _pd(x.get("entry_date")) or date.min,
         )
         if cal_sorted:
-            _chart_legend("On target (±10%)", "±10–25%", ">25% off target")
             cdates = [str(_pd(m["entry_date"])) for m in cal_sorted]
             cvals  = [m.get("calories", 0) for m in cal_sorted]
-            # For calories: near-target is best; over/under both shown
             def _cal_color(v):
-                if cal_target <= 0: return "#00C2FF"
-                deviation = abs(v - cal_target) / cal_target
-                if deviation <= 0.10: return "#00C2FF"
-                elif deviation <= 0.25: return "#FFB347"
-                else: return "#FF6B6B"
-            colors_c = [_cal_color(v) for v in cvals]
+                dev = abs(v - cal_target) / max(cal_target, 1)
+                return "#00C2FF" if dev <= 0.10 else "#FFB347" if dev <= 0.25 else "#FF6B6B"
             fig = go.Figure()
-            fig.add_trace(go.Bar(
-                x=cdates, y=cvals, name="Calories",
-                marker=dict(color=colors_c, opacity=0.85, line=dict(width=0)),
-                text=[f"{v:,.0f}" for v in cvals],
-                textposition="outside",
-                textfont=dict(size=9, color="#9CA3AF"),
+            fig.add_trace(go.Scatter(
+                x=cdates, y=cvals, mode="lines+markers", name="Calories",
+                line=dict(color="#00C2FF", width=2, shape="spline", smoothing=0.5),
+                marker=dict(size=6, color=[_cal_color(v) for v in cvals],
+                            line=dict(width=1.5, color="#0A0A0A")),
+                fill="tozeroy", fillcolor="rgba(0,194,255,0.06)",
                 hovertemplate="<b>%{x}</b><br>Calories: <b>%{y:,.0f} kcal</b><br>Target: " + f"{cal_target:,} kcal" + "<extra></extra>",
             ))
-            fig.add_hline(
-                y=cal_target,
-                line=dict(color="rgba(0,194,255,0.45)", dash="dot", width=1.5),
-                annotation_text=f"target {cal_target:,}",
-                annotation_font_color="#6B7280", annotation_font_size=9,
-                annotation_position="top right",
-            )
-            fig.update_yaxis(tickformat=",")
+            fig.add_hline(y=cal_target, line=dict(color="rgba(0,194,255,0.45)", dash="dot", width=1.5),
+                          annotation_text=f"target {cal_target:,}", annotation_font_color="#6B7280",
+                          annotation_font_size=9, annotation_position="top right")
+            fig.update_xaxes(range=x_range)
+            fig.update_yaxes(tickformat=",")
             _dark_chart(fig, 260)
         else:
-            st.info("Log meals in Nutrition to see calorie tracking.")
+            st.markdown('<div class="empty-state" style="padding:1.5rem;"><div class="empty-state-icon">🥗</div>'
+                        '<div class="empty-state-sub">Log meals in <strong>Nutrition</strong></div></div>',
+                        unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
     row2_l, row2_r = st.columns(2)
 
-    # Panel 3 — Protein
     with row2_l:
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        _section_hdr(f"Protein — Target {protein_target_g}g/day")
+        _section_hdr(f"Protein — Target {protein_target_g:.0f}g/day")
         prot_sorted = sorted(
-            [m for m in macros if (_pd(m.get("entry_date")) or date.min) >= range_start],
+            [m for m in macros if range_start <= (_pd(m.get("entry_date")) or date.min) <= range_end],
             key=lambda x: _pd(x.get("entry_date")) or date.min,
         )
         if prot_sorted:
-            _chart_legend("Hit target", "70–97%", "Below 70%")
             pdates = [str(_pd(m["entry_date"])) for m in prot_sorted]
             pvals  = [m.get("protein_g", 0) for m in prot_sorted]
-            colors_p = [_goal_color(v, protein_target_g) for v in pvals]
             fig = go.Figure()
-            fig.add_trace(go.Bar(
-                x=pdates, y=pvals, name="Protein",
-                marker=dict(color=colors_p, opacity=0.85, line=dict(width=0)),
-                text=[f"{v:.0f}g" for v in pvals],
-                textposition="outside",
-                textfont=dict(size=9, color="#9CA3AF"),
+            fig.add_trace(go.Scatter(
+                x=pdates, y=pvals, mode="lines+markers", name="Protein",
+                line=dict(color="#FFB347", width=2, shape="spline", smoothing=0.5),
+                marker=dict(size=6, color=[_goal_color(v, protein_target_g) for v in pvals],
+                            line=dict(width=1.5, color="#0A0A0A")),
+                fill="tozeroy", fillcolor="rgba(255,179,71,0.06)",
                 hovertemplate="<b>%{x}</b><br>Protein: <b>%{y:.0f}g</b><br>Target: " + f"{protein_target_g:.0f}g" + "<extra></extra>",
             ))
-            fig.add_hline(
-                y=protein_target_g,
-                line=dict(color="rgba(0,255,135,0.45)", dash="dot", width=1.5),
-                annotation_text=f"target {protein_target_g:.0f}g",
-                annotation_font_color="#6B7280", annotation_font_size=9,
-                annotation_position="top right",
-            )
+            fig.add_hline(y=protein_target_g, line=dict(color="rgba(255,179,71,0.45)", dash="dot", width=1.5),
+                          annotation_text=f"target {protein_target_g:.0f}g", annotation_font_color="#6B7280",
+                          annotation_font_size=9, annotation_position="top right")
+            fig.update_xaxes(range=x_range)
             _dark_chart(fig, 260)
         else:
-            st.info("Log meals in Nutrition to see protein tracking.")
+            st.markdown('<div class="empty-state" style="padding:1.5rem;"><div class="empty-state-icon">💪</div>'
+                        '<div class="empty-state-sub">Log meals in <strong>Nutrition</strong> to track protein</div></div>',
+                        unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # Panel 4 — Workout frequency
     with row2_r:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         _section_hdr(f"Workout Frequency — Goal {freq_target}×/week")
         freq: dict[str, int] = {}
         for w in workouts:
             d = _pd(w.get("log_date"))
-            if not d or d < range_start: continue
+            if not d or not (range_start <= d <= range_end): continue
             wk = (d - timedelta(days=d.weekday())).strftime("%d %b")
             freq[wk] = freq.get(wk, 0) + 1
         weeks = sorted(freq.items())
         if weeks:
-            _chart_legend("Goal reached", "Partial week", "Under target")
             wlabels = [wk[0] for wk in weeks]
             wcounts = [wk[1] for wk in weeks]
-            colors_w = [_goal_color(v, freq_target) for v in wcounts]
             fig = go.Figure()
-            fig.add_trace(go.Bar(
-                x=wlabels, y=wcounts, name="Sessions",
-                marker=dict(color=colors_w, opacity=0.85, line=dict(width=0)),
-                text=[str(v) for v in wcounts],
-                textposition="outside",
-                textfont=dict(size=11, color="#9CA3AF"),
+            fig.add_trace(go.Scatter(
+                x=wlabels, y=wcounts, mode="lines+markers", name="Sessions",
+                line=dict(color="#00FF87", width=2, shape="spline", smoothing=0.4),
+                marker=dict(size=8, color=[_goal_color(v, freq_target) for v in wcounts],
+                            line=dict(width=1.5, color="#0A0A0A")),
+                fill="tozeroy", fillcolor="rgba(0,255,135,0.06)",
                 hovertemplate="<b>Week of %{x}</b><br>Sessions: <b>%{y}</b><br>Goal: " + str(freq_target) + "/week<extra></extra>",
             ))
-            fig.add_hline(
-                y=freq_target,
-                line=dict(color="rgba(0,255,135,0.45)", dash="dot", width=1.5),
-                annotation_text=f"goal {freq_target}×",
-                annotation_font_color="#6B7280", annotation_font_size=9,
-                annotation_position="top right",
-            )
-            fig.update_yaxis(dtick=1, tickformat="d")
+            fig.add_hline(y=freq_target, line=dict(color="rgba(0,255,135,0.45)", dash="dot", width=1.5),
+                          annotation_text=f"goal {freq_target}×", annotation_font_color="#6B7280",
+                          annotation_font_size=9, annotation_position="top right")
+            fig.update_yaxes(dtick=1, tickformat="d")
             _dark_chart(fig, 260)
         else:
-            st.info("Log workouts to see frequency trends.")
+            st.markdown('<div class="empty-state" style="padding:1.5rem;"><div class="empty-state-icon">🏋️</div>'
+                        '<div class="empty-state-sub">Log workouts to see weekly frequency</div></div>',
+                        unsafe_allow_html=True)
         st.markdown("</div>", unsafe_allow_html=True)
 
-    # ── Weight trend (full width) ─────────────────────────────
-    sorted_metrics = sorted([m for m in metrics if m.get("weight_kg")],
-                            key=lambda x: _pd(x.get("entry_date")) or date.min)
+    # ── Weight trend ──────────────────────────────────────────
+    sorted_metrics = sorted(
+        [m for m in metrics if m.get("weight_kg") and
+         range_start <= (_pd(m.get("entry_date")) or date.min) <= range_end],
+        key=lambda x: _pd(x.get("entry_date")) or date.min,
+    )
     if sorted_metrics:
         st.markdown('<div class="card">', unsafe_allow_html=True)
         _section_hdr("Body Weight Trend")
         wdates = [str(_pd(m["entry_date"])) for m in sorted_metrics]
         wvals  = [m["weight_kg"] for m in sorted_metrics]
-        w_min = min(wvals) if wvals else weight_kg
-        w_max = max(wvals) if wvals else weight_kg
+        w_min  = min(wvals); w_max = max(wvals)
         fig = go.Figure()
         fig.add_trace(go.Scatter(
-            x=wdates, y=wvals,
-            mode="lines+markers",
-            name="Weight",
+            x=wdates, y=wvals, mode="lines+markers", name="Weight",
             line=dict(color="#00FF87", width=2.5, shape="spline", smoothing=0.6),
             marker=dict(size=6, color="#00FF87", line=dict(width=1.5, color="#0A0A0A")),
-            fill="tozeroy",
-            fillcolor="rgba(0,255,135,0.05)",
+            fill="tozeroy", fillcolor="rgba(0,255,135,0.05)",
             hovertemplate="<b>%{x}</b><br>Weight: <b>%{y:.1f} kg</b><extra></extra>",
         ))
-        fig.add_hline(
-            y=weight_kg,
-            line=dict(color="rgba(255,179,71,0.35)", dash="dot", width=1.5),
-            annotation_text=f"profile {weight_kg:.1f} kg",
-            annotation_font_color="#6B7280", annotation_font_size=9,
-            annotation_position="top right",
-        )
-        if wvals:
-            fig.add_annotation(
-                x=wdates[wvals.index(w_min)], y=w_min,
-                text=f"low {w_min:.1f}kg", showarrow=False,
-                font=dict(size=9, color="#FF6B6B"), yshift=-14,
-            )
-            fig.add_annotation(
-                x=wdates[wvals.index(w_max)], y=w_max,
-                text=f"high {w_max:.1f}kg", showarrow=False,
-                font=dict(size=9, color="#00FF87"), yshift=12,
-            )
+        fig.add_hline(y=weight_kg, line=dict(color="rgba(255,179,71,0.35)", dash="dot", width=1.5),
+                      annotation_text=f"profile {weight_kg:.1f} kg", annotation_font_color="#6B7280",
+                      annotation_font_size=9, annotation_position="top right")
+        fig.add_annotation(x=wdates[wvals.index(w_min)], y=w_min, text=f"low {w_min:.1f}kg",
+                           showarrow=False, font=dict(size=9, color="#FF6B6B"), yshift=-14)
+        fig.add_annotation(x=wdates[wvals.index(w_max)], y=w_max, text=f"high {w_max:.1f}kg",
+                           showarrow=False, font=dict(size=9, color="#00FF87"), yshift=12)
+        fig.update_xaxes(range=x_range)
         _dark_chart(fig, 220)
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -1740,33 +1975,44 @@ def show_main_app():
             st.caption("No profiles — create one in Profile")
 
         st.markdown(
-            '<hr style="border:none;border-top:1px solid #1E1E1E;margin:1rem 0 0.75rem;">',
+            '<hr style="border:none;border-top:1px solid #1E1E1E;margin:1rem 0 0.5rem;">',
             unsafe_allow_html=True,
         )
         st.markdown(
-            '<div style="font-size:.65rem;font-weight:700;color:var(--muted);letter-spacing:.1em;'
-            'text-transform:uppercase;padding:0 0.25rem;margin-bottom:.4rem;">Navigate</div>',
+            '<div style="font-size:.62rem;font-weight:700;color:#374151;letter-spacing:.1em;'
+            'text-transform:uppercase;padding:0 0.5rem;margin-bottom:.3rem;">Menu</div>',
             unsafe_allow_html=True,
         )
 
         cur = st.session_state.get("active_section", "Dashboard")
 
-        NAV = ["Dashboard", "Workouts", "Nutrition", "My Progress", "Wellness", "Profile"]
-        for sec in NAV:
+        NAV_ICONS = {
+            "Dashboard":   ("◈", "Dashboard"),
+            "Workouts":    ("◉", "Workouts"),
+            "Nutrition":   ("◎", "Nutrition"),
+            "My Progress": ("◐", "Progress"),
+            "Wellness":    ("◌", "Wellness"),
+            "Profile":     ("◍", "Profile"),
+        }
+
+        for sec, (icon, label) in NAV_ICONS.items():
             if sec == cur:
                 st.markdown(
-                    f'<div style="padding:.6rem 1rem;border-radius:7px;margin-bottom:1px;'
-                    f'background:rgba(0,255,135,0.08);border-left:2px solid #00FF87;'
-                    f'font-size:.82rem;font-weight:600;color:#00FF87;letter-spacing:.01em;">{sec}</div>',
+                    f'<div data-nav-active style="display:flex;align-items:center;gap:.55rem;'
+                    f'padding:.52rem .9rem;border-radius:8px;'
+                    f'background:rgba(0,255,135,0.09);">'
+                    f'<span style="font-size:.72rem;color:#00FF87;">{icon}</span>'
+                    f'<span style="font-size:.83rem;font-weight:600;color:#00FF87;">{label}</span>'
+                    f'</div>',
                     unsafe_allow_html=True,
                 )
             else:
-                if st.button(sec, key=f"nav_{sec}", use_container_width=True):
+                if st.button(f"{icon}  {label}", key=f"nav_{sec}", use_container_width=True):
                     st.session_state.active_section = sec
                     st.rerun()
 
         st.markdown(
-            '<hr style="border:none;border-top:1px solid #1E1E1E;margin:.75rem 0;">',
+            '<hr style="border:none;border-top:1px solid #1E1E1E;margin:.5rem 0 .3rem;">',
             unsafe_allow_html=True,
         )
         if st.button("Sign Out", key="signout", use_container_width=True):

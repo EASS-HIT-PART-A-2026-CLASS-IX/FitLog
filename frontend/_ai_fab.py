@@ -8,9 +8,11 @@ import streamlit.components.v1 as components
 import streamlit as st
 
 # Server-side URL (Python/httpx): may be internal Docker hostname
-_API_BASE = os.environ.get("API_BASE", "http://localhost:8000")
+_API_BASE = os.environ.get("API_BASE", "http://127.0.0.1:8000")
 # Browser-side URL (JavaScript fetch): must be reachable from the user's browser
-_PUBLIC_API_BASE = os.environ.get("PUBLIC_API_BASE", "http://localhost:8000")
+# Use 127.0.0.1 explicitly — on Windows, "localhost" may resolve to IPv6 (::1)
+# which fails when uvicorn only listens on IPv4.
+_PUBLIC_API_BASE = os.environ.get("PUBLIC_API_BASE", "http://127.0.0.1:8000")
 
 
 _FAB_CSS = """

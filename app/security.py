@@ -55,12 +55,14 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
             parts = hashed_password.split("$")
             if len(parts) == 4:
                 iterations = int(parts[1])
-                salt = parts[2]
+                salt_hex = parts[2]
                 stored_hash = parts[3]
+                # Salt was stored as hex — decode to raw bytes before hashing
+                salt_bytes = bytes.fromhex(salt_hex)
                 computed = hashlib.pbkdf2_hmac(
                     "sha256",
                     plain_password.encode("utf-8"),
-                    salt.encode("utf-8"),
+                    salt_bytes,
                     iterations,
                 )
                 return computed.hex() == stored_hash

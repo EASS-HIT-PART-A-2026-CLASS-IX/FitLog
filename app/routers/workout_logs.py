@@ -55,7 +55,7 @@ async def list_logs(
     if end_date:
         stmt = stmt.where(WorkoutLog.log_date <= str(end_date))
 
-    stmt = stmt.offset(offset).limit(limit)
+    stmt = stmt.order_by(WorkoutLog.log_date.desc()).offset(offset).limit(limit)
     result = await session.execute(stmt)
     return result.scalars().all()
 
