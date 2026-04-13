@@ -275,6 +275,81 @@ uv run pytest tests/ -v --cov=app --cov-report=term-missing
 
 ---
 
+## Course Exercise Checklist
+
+FitLog is the submission project for a three-part university course on full-stack microservices. The table below maps each graded requirement to the relevant files.
+
+### EX1 — FastAPI Foundations
+
+| Requirement | Status | Where |
+|---|---|---|
+| CRUD endpoints for core resource | Done | `app/routers/exercises.py`, `workout_logs.py`, `macros.py` |
+| SQLModel + SQLite persistence | Done | `app/db.py`, `app/database.py` |
+| Alembic migrations | Done | `alembic/versions/` |
+| pytest + TestClient tests | Done | `tests/test_exercises.py`, `test_workout_logs.py`, `test_macros.py`, … |
+| README with uv + run + test instructions | Done | This file |
+| **Bonus** — seed script | Done | `scripts/seed.py` |
+| **Bonus** — `.http` playground | Done | `fitlog.http` |
+
+### EX2 — Frontend Connected to Backend
+
+| Requirement | Status | Where |
+|---|---|---|
+| Streamlit dashboard reusing EX1 API | Done | `frontend/app.py` |
+| List existing entries | Done | All sections: Workouts, Nutrition, Wellness |
+| Add new entry in under a minute | Done | Forms on every section page |
+| One small extra | Done | AI food analysis (`POST /macros/analyze-food`), analytics dashboard, AI coach FAB |
+| Run side-by-side documentation | Done | [Quick Start](#quick-start-local-no-docker) section above |
+
+### EX3 — Full-Stack Microservices Final Project
+
+| Requirement | Status | Where |
+|---|---|---|
+| Three cooperating services | Done | FastAPI backend + SQLite/SQLModel + Streamlit frontend |
+| Fourth microservice | Done | Groq LLM AI coach (`app/routers/ai_assistant.py`) |
+| `docker-compose.yml` + Redis | Done | `docker-compose.yml` |
+| Compose runbook | Done | `docs/runbooks/compose.md` |
+| `scripts/refresh.py` with bounded concurrency + Redis idempotency | Done | `scripts/refresh.py` |
+| `pytest.mark.anyio` async test | **Missing** | Add one test to `tests/` using `pytest.mark.anyio` |
+| JWT-protected routes | Done | All protected routes via `get_current_user_from_header` |
+| bcrypt hashed credentials | Done | `app/security.py` |
+| Per-IP login rate limiting | Done | `app/routers/auth.py` — 10 attempts/60 s |
+| Test failing on expired/missing token | **Missing** | Add to `tests/test_auth_security.py` |
+| Session 11 docs (rotation steps) | Done | `docs/EX3-notes.md` |
+| Thoughtful enhancement | Done | Wellness tracking, strength progression, AI food analysis |
+| Tests covering the enhancement | Done | `tests/test_ai_assistant.py`, `test_body_metrics.py`, … |
+| Demo script | Done | `scripts/demo.py` |
+
+**Two gaps remaining for full EX3 marks:**
+
+1. Add a `pytest.mark.anyio` test (Session 09 requirement). Example — test `scripts/refresh.py` directly:
+
+```python
+# tests/test_refresh.py
+import pytest
+import pytest_asyncio
+
+@pytest.mark.anyio
+async def test_refresh_runs_without_error():
+    from scripts.refresh import run_refresh
+    await run_refresh(dry_run=True)
+```
+
+2. Add auth-failure tests (Session 11 requirement):
+
+```python
+# tests/test_auth_security.py
+def test_expired_token_is_rejected(client):
+    response = client.get("/auth/me", headers={"Authorization": "Bearer expired.token.here"})
+    assert response.status_code == 401
+
+def test_missing_token_is_rejected(client):
+    response = client.get("/auth/me")
+    assert response.status_code == 401
+```
+
+---
+
 ## Contributing
 
 1. Fork the repository and create a feature branch from `main`.
