@@ -1238,18 +1238,35 @@ def show_nutrition():
                 if not food_desc or len(food_desc) < 3:
                     st.error("Please describe your meal")
                 else:
-                    with st.spinner("Analyzing..."):
+                    with st.spinner("Analyzing with AI..."):
                         try:
-                            r = _client().post("/macros/analyze-food", json={"food_description": food_desc}, headers=_headers(), timeout=30.0)
+                            r = _client().post(
+                                "/macros/analyze-food",
+                                json={"food_description": food_desc},
+                                headers=_headers(),
+                                timeout=30.0,
+                            )
                             if r.status_code == 200:
                                 st.session_state.ai_nutrition = r.json()
                                 st.session_state.ai_nutrition_date = str(ai_date)
                                 st.session_state.ai_nutrition_desc = food_desc
                                 st.rerun()
+                            elif r.status_code == 401:
+                                st.error("Session expired — please log in again.")
+                            elif r.status_code == 503:
+                                st.error("AI service is temporarily unavailable. Check your GROQ_API_KEY.")
                             else:
-                                st.error(f"Analysis failed: {r.json().get('detail','Error')}")
+                                try:
+                                    detail = r.json().get("detail", r.text)
+                                except Exception:
+                                    detail = r.text
+                                st.error(f"Analysis failed ({r.status_code}): {detail}")
+                        except httpx.TimeoutException:
+                            st.error("Request timed out — the AI took too long. Try a shorter description.")
+                        except httpx.ConnectError:
+                            st.error("Cannot reach the backend. Is the API running on port 8000?")
                         except Exception as e:
-                            st.error(f"Error: {e}")
+                            st.error(f"Unexpected error: {e}")
 
             data = st.session_state.get("ai_nutrition")
             if data:

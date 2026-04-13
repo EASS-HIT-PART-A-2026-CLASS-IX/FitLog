@@ -59,42 +59,34 @@ async def analyze_food_nutrition(
     try:
         client = _get_groq_client()
 
-        prompt = f"""You are a nutrition expert. Analyze this food description and provide nutritional estimates.
-
-Food: {body.food_description}
-
-Please respond ONLY with valid JSON (no other text) in this exact format:
-{{
-  "calories": <number between 0-5000>,
-  "protein_g": <number between 0-200>,
-  "carbs_g": <number between 0-500>,
-  "fat_g": <number between 0-200>,
-  "analysis": "<brief 1-2 sentence explanation of your estimates>"
-}}
-
-Be as accurate as possible using standard nutrition databases. Estimates should be realistic and reasonable."""
+        prompt = (
+            f"Analyze this food and return nutritional estimates as JSON.\n"
+            f"Food: {body.food_description}\n\n"
+            f"Return exactly these keys: calories (kcal, number), protein_g (number), "
+            f"carbs_g (number), fat_g (number), analysis (string, 1-2 sentences). "
+            f"Use standard nutrition database values. Be realistic."
+        )
 
         response = await client.chat.completions.create(
             model=settings.groq_model,
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a nutrition expert that responds ONLY with valid JSON, no markdown, no code blocks, just pure JSON.",
+                    "content": (
+                        "You are a nutrition expert. "
+                        "Always respond with a single valid JSON object containing: "
+                        "calories, protein_g, carbs_g, fat_g, analysis."
+                    ),
                 },
                 {"role": "user", "content": prompt},
             ],
             temperature=0.3,
-            max_tokens=300,
+            max_tokens=500,
+            response_format={"type": "json_object"},
         )
 
         response_text = response.choices[0].message.content.strip()
-
-        # Extract JSON even if model wraps it in extra text
-        if "{" in response_text and "}" in response_text:
-            json_str = response_text[response_text.find("{"):response_text.rfind("}") + 1]
-            nutrition_data = json.loads(json_str)
-        else:
-            nutrition_data = json.loads(response_text)
+        nutrition_data = json.loads(response_text)
 
         required_fields = ["calories", "protein_g", "carbs_g", "fat_g", "analysis"]
         if not all(field in nutrition_data for field in required_fields):

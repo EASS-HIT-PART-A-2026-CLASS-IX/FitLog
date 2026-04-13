@@ -101,13 +101,19 @@ async def _build_context(profile: FitnessProfile, session: AsyncSession) -> str:
     recent_logs = await _fetch_recent_workouts(profile.user_id, session)
     recent_macros = await _fetch_recent_macros(profile.user_id, session)
 
+    goal_label = {
+        "muscle": "Muscle Building / Hypertrophy",
+        "weight_loss": "Weight Loss",
+        "endurance": "Endurance / Cardio",
+        "fit": "General Fitness / Maintenance",
+    }.get(profile.goal, profile.goal.capitalize())
+
     ctx_lines: list[str] = [
         "=== USER FITNESS PROFILE ===",
         f"Name: {profile.name}",
         f"Age: {profile.age} | Gender: {profile.gender}",
         f"Weight: {profile.weight_kg} kg | Height: {profile.height_cm} cm",
-        f"Goal: {profile.goal.upper()} "
-        f"({'Maintenance/Recomposition' if profile.goal == 'fit' else 'Hypertrophy/Muscle Building'})",
+        f"Goal: {goal_label}",
     ]
 
     if recent_logs:
@@ -176,7 +182,7 @@ async def chat(
                 {"role": "user", "content": full_message},
             ],
             temperature=0.7,
-            max_tokens=500,
+            max_tokens=1024,
         )
         reply = response.choices[0].message.content
         return ChatResponse(reply=reply or "")
