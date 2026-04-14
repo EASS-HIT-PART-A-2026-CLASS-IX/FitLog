@@ -8,7 +8,7 @@ Protein multipliers (evidence-based, per ISSN / ACSM guidelines):
   - muscle (hypertrophy/bulk):   2.2 g / kg body weight
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -217,7 +217,7 @@ async def delete_profile(
     if not profile:
         raise NotFoundError("Profile not found")
 
-    await session.delete(profile)
+    session.delete(profile)
     await session.commit()
 
 
@@ -327,7 +327,7 @@ async def upsert_profile_goals(
     else:
         for k, v in updates.items():
             setattr(goals, k, v)
-        goals.updated_at = datetime.utcnow()
+        goals.updated_at = datetime.now(timezone.utc)
 
     await session.commit()
     await session.refresh(goals)

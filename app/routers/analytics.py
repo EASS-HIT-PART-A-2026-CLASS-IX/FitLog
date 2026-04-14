@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, Query, status
 from app.exceptions import NotFoundError
 from app.cache import cache, analytics_key
 from app.config import settings
+from sqlalchemy import desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -347,11 +348,13 @@ async def get_body_metrics_trend(
 ) -> list[BodyMetricsTrendOut]:
     cutoff = date.today() - timedelta(days=days)
 
-    # Fetch user's latest height for BMI calculation
-    stmt = select(FitnessProfile).where(FitnessProfile.user_id == current_user.id)
+    # Fetch user's latest profile for BMI calculation
+    stmt = select(FitnessProfile).where(
+        FitnessProfile.user_id == current_user.id
+    ).order_by(desc(FitnessProfile.created_at))
     result = await session.execute(stmt)
-    profiles = result.scalars().all()
-    height_cm: Optional[float] = profiles[0].height_cm if profiles else None
+    latest_profile = result.scalars().first()
+    height_cm: Optional[float] = latest_profile.height_cm if latest_profile else None
 
     stmt = select(BodyMetricEntry).where(
         (BodyMetricEntry.owner_id == current_user.id)

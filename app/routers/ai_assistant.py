@@ -8,37 +8,37 @@ Groq provides faster inference and much higher free tier quotas than Gemini.
 
 from __future__ import annotations
 
+import logging
 import time
 from typing import Optional
 
-import logging
-
 from fastapi import APIRouter, status, Depends
-from app.exceptions import NotFoundError, ExternalServiceError
 from openai import AsyncOpenAI, RateLimitError, APITimeoutError, APIStatusError
-
-logger = logging.getLogger(__name__)
 from sqlalchemy import desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from app.models import ChatRequest, ChatResponse
+from app.config import settings
 from app.database import get_session
 from app.db import FitnessProfile, WorkoutLog, MacroEntry, User
+from app.exceptions import NotFoundError, ExternalServiceError
+from app.models import ChatRequest, ChatResponse
 from app.routers.auth import get_current_user_from_header
 
-router = APIRouter(prefix="/ai", tags=["AI Assistant"])
+logger = logging.getLogger(__name__)
 
-from app.config import settings
+router = APIRouter(prefix="/ai", tags=["AI Assistant"])
 
 _GROQ_MODEL = settings.groq_model
 
 # ---------------------------------------------------------------------------
 # In-memory context cache: avoids repeated DB round-trips within a 5-minute
 # window for the same user.  Stored as {profile_id: (context_str, expires_at)}
+# Capped at 500 entries; oldest entries evicted when full.
 # ---------------------------------------------------------------------------
 _CONTEXT_CACHE: dict[str, tuple[str, float]] = {}
-_CONTEXT_TTL_SECONDS = 300  # 5 minutes
+_CONTEXT_TTL_SECONDS = 300   # 5 minutes
+_CONTEXT_CACHE_MAX   = 500
 
 
 def _get_cached_context(profile_id: str) -> Optional[str]:
@@ -54,8 +54,18 @@ def _get_cached_context(profile_id: str) -> Optional[str]:
 
 
 def _set_cached_context(profile_id: str, context: str) -> None:
-    """Store context string in the in-memory cache with a TTL."""
-    _CONTEXT_CACHE[profile_id] = (context, time.monotonic() + _CONTEXT_TTL_SECONDS)
+    """Store context string in the cache; evict expired + oldest if over cap."""
+    now = time.monotonic()
+    # Evict all expired entries first
+    expired = [k for k, (_, exp) in _CONTEXT_CACHE.items() if now > exp]
+    for k in expired:
+        del _CONTEXT_CACHE[k]
+    # If still over cap, evict the oldest-expiring entries
+    if len(_CONTEXT_CACHE) >= _CONTEXT_CACHE_MAX:
+        oldest = sorted(_CONTEXT_CACHE, key=lambda k: _CONTEXT_CACHE[k][1])
+        for k in oldest[: len(_CONTEXT_CACHE) - _CONTEXT_CACHE_MAX + 1]:
+            del _CONTEXT_CACHE[k]
+    _CONTEXT_CACHE[profile_id] = (context, now + _CONTEXT_TTL_SECONDS)
 
 
 _groq_client: AsyncOpenAI | None = None

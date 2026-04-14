@@ -10,7 +10,20 @@ from threading import Lock
 from typing import Optional
 
 from fastapi import APIRouter, status, Depends, Header
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
+
+from app.database import get_session
+from app.db import User
 from app.exceptions import AuthError, ConflictError, DomainValidationError, NotFoundError, RateLimitError
+from app.models import UserRegister, UserLogin, TokenResponse, UserResponse
+from app.security import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    verify_token,
+    validate_password_strength,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -33,19 +46,6 @@ def _check_rate_limit(identifier: str) -> None:
                 retry_after=int(_WINDOW_SECONDS),
             )
         _login_attempts[identifier].append(now)
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
-
-from app.models import UserRegister, UserLogin, TokenResponse, UserResponse
-from app.security import (
-    hash_password,
-    verify_password,
-    create_access_token,
-    verify_token,
-    validate_password_strength,
-)
-from app.database import get_session
-from app.db import User
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 

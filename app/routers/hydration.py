@@ -95,7 +95,7 @@ async def delete_hydration_entry(
     if not entry:
         raise NotFoundError("Hydration entry not found")
 
-    await session.delete(entry)
+    session.delete(entry)
     await session.commit()
 
 

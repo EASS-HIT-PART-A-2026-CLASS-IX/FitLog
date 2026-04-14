@@ -98,7 +98,7 @@ async def delete_sleep_entry(
     if not entry:
         raise NotFoundError("Sleep entry not found")
 
-    await session.delete(entry)
+    session.delete(entry)
     await session.commit()
 
 

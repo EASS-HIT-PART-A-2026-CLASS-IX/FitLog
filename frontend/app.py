@@ -38,26 +38,26 @@ st.set_page_config(
 
 # ── Theme CSS ─────────────────────────────────────────────────
 
-DARK_THEME_CSS = """
+THEME_CSS = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 :root {
-  --bg:        #0A0A0A;
-  --surface:   #141414;
-  --surface2:  #1A1A1A;
-  --border:    #1E1E1E;
-  --border2:   #2A2A2A;
-  --accent:    #00FF87;
-  --accent2:   #00C2FF;
-  --danger:    #FF6B6B;
-  --warning:   #FFB347;
-  --text:      #FFFFFF;
-  --muted:     #9CA3AF;
+  --bg:        #FFFFFF;
+  --surface:   #FFFFFF;
+  --surface2:  #F1F5F9;
+  --border:    #E2E8F0;
+  --border2:   #CBD5E1;
+  --accent:    #059669;
+  --accent2:   #0891B2;
+  --danger:    #DC2626;
+  --warning:   #F59E0B;
+  --text:      #0F172A;
+  --muted:     #64748B;
   --r:         12px;
   --r-sm:      8px;
-  --shadow:    0 4px 24px rgba(0,0,0,0.6);
-  --glow:      0 0 20px rgba(0,255,135,0.25);
+  --shadow:    0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --glow:      0 0 20px rgba(5,150,105,0.15);
 }
 
 * { font-family: 'Inter', -apple-system, sans-serif; box-sizing: border-box; }
@@ -73,7 +73,7 @@ DARK_THEME_CSS = """
 /* ── Sidebar ── */
 section[data-testid="stSidebar"],
 [data-testid="stSidebar"] > div:first-child {
-  background: #0D0D0D !important;
+  background: #F8FAFC !important;
   border-right: 1px solid var(--border) !important;
 }
 
@@ -119,12 +119,12 @@ section[data-testid="stSidebar"],
 
 /* ── Welcome banner ── */
 .welcome-box {
-  background: linear-gradient(135deg, #0D2B1A 0%, #0A0A0A 100%);
-  border: 1px solid rgba(0,255,135,0.2);
+  background: linear-gradient(135deg, #ECFDF5 0%, #F0FDF4 100%);
+  border: 1px solid rgba(5,150,105,0.2);
   border-radius: var(--r);
   padding: 1.75rem 2rem;
   margin-bottom: 1.25rem;
-  box-shadow: 0 4px 32px rgba(0,255,135,0.08);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
 }
 .welcome-box h2 {
   margin: 0 0 0.35rem 0;
@@ -143,7 +143,7 @@ section[data-testid="stSidebar"],
   margin-bottom: 0.6rem;
   transition: border-color 0.2s;
 }
-.workout-card:hover { border-color: rgba(0,255,135,0.35); }
+.workout-card:hover { border-color: rgba(5,150,105,0.35); }
 .workout-card-header {
   display: flex;
   justify-content: space-between;
@@ -152,7 +152,7 @@ section[data-testid="stSidebar"],
 }
 .workout-card-title { font-weight: 600; color: var(--text); font-size: 0.95rem; }
 .workout-card-badge {
-  background: rgba(0,255,135,0.12);
+  background: rgba(5,150,105,0.12);
   color: var(--accent);
   border-radius: 6px;
   padding: 0.15rem 0.5rem;
@@ -178,8 +178,8 @@ section[data-testid="stSidebar"],
   display: flex; align-items: center; justify-content: center;
   font-size: 1rem; flex-shrink: 0;
 }
-.activity-icon.workout  { background: rgba(0,255,135,0.12); }
-.activity-icon.nutrition { background: rgba(0,194,255,0.12); }
+.activity-icon.workout  { background: rgba(5,150,105,0.12); }
+.activity-icon.nutrition { background: rgba(8,145,178,0.12); }
 .activity-title { font-size: 0.875rem; font-weight: 500; color: var(--text); }
 .activity-time  { font-size: 0.73rem; color: var(--muted); }
 
@@ -208,29 +208,29 @@ section[data-testid="stSidebar"],
   border-radius: 10px; font-size: 0.84rem; line-height: 1.5;
 }
 .chat-bbl-user {
-  background: var(--accent); color: #0A0A0A;
+  background: var(--accent); color: #FFFFFF;
   border-bottom-right-radius: 3px; font-weight: 500;
 }
 .chat-bbl-ai {
   background: var(--surface2); color: var(--text);
-  border: 1px solid var(--border2); border-bottom-left-radius: 3px;
+  border: 1px solid var(--border); border-bottom-left-radius: 3px;
 }
 
 /* ── Buttons ── */
 .stButton > button {
   background: var(--accent) !important;
-  color: #0A0A0A !important;
+  color: #FFFFFF !important;
   border: none !important;
   border-radius: var(--r-sm) !important;
   font-weight: 700 !important;
   font-size: 0.875rem !important;
   padding: 0.5rem 1.25rem !important;
   transition: all 0.2s !important;
-  box-shadow: 0 2px 12px rgba(0,255,135,0.25) !important;
+  box-shadow: 0 1px 3px rgba(5,150,105,0.15) !important;
 }
 .stButton > button:hover {
-  background: #00E87A !important;
-  box-shadow: 0 4px 20px rgba(0,255,135,0.45) !important;
+  background: #047857 !important;
+  box-shadow: 0 4px 12px rgba(5,150,105,0.25) !important;
   transform: translateY(-1px) !important;
 }
 
@@ -245,7 +245,7 @@ section[data-testid="stSidebar"],
 .stTextInput > div > div > input:focus,
 .stNumberInput > div > div > input:focus {
   border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px rgba(0,255,135,0.15) !important;
+  box-shadow: 0 0 0 3px rgba(5,150,105,0.15) !important;
 }
 .stSelectbox > div > div {
   background: var(--surface2) !important;
@@ -288,7 +288,7 @@ section[data-testid="stSidebar"],
 }
 .stTabs [aria-selected="true"] {
   background: var(--accent) !important;
-  color: #0A0A0A !important; font-weight: 700 !important;
+  color: #FFFFFF !important; font-weight: 700 !important;
 }
 
 /* ── Sidebar: collapse nav item wrapper gaps ── */
@@ -322,21 +322,21 @@ section[data-testid="stSidebar"] .stButton > button {
   transform: none !important;
 }
 section[data-testid="stSidebar"] .stButton > button:hover {
-  background: rgba(255,255,255,0.05) !important;
-  color: #D1D5DB !important;
+  background: rgba(5,150,105,0.08) !important;
+  color: var(--accent) !important;
   box-shadow: none !important;
   transform: none !important;
 }
 /* ── Sidebar sign-out button ── */
 section[data-testid="stSidebar"] .stButton:last-child > button {
-  color: #4B5563 !important;
+  color: #94A3B8 !important;
   font-size: 0.75rem !important;
   letter-spacing: 0.05em !important;
   text-transform: uppercase !important;
   margin-top: 0.25rem !important;
 }
 section[data-testid="stSidebar"] .stButton:last-child > button:hover {
-  background: rgba(255,107,107,0.07) !important;
+  background: rgba(220,38,38,0.07) !important;
   color: var(--danger) !important;
 }
 
@@ -381,14 +381,14 @@ label { color: var(--muted) !important; }
   border-radius: 16px;
   display: flex; align-items: center; justify-content: center;
   font-size: 32px; margin: 0 auto 1rem;
-  box-shadow: 0 4px 24px rgba(0,255,135,0.35);
+  box-shadow: 0 4px 12px rgba(5,150,105,0.2);
 }
 
 /* ── Scrollbar ── */
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(0,255,135,0.4); }
+::-webkit-scrollbar-thumb:hover { background: rgba(5,150,105,0.35); }
 
 /* ── Chart legend pill ── */
 .chart-legend { display: flex; gap: .5rem; align-items: center; margin-bottom: .5rem; flex-wrap: wrap; }
@@ -396,7 +396,7 @@ label { color: var(--muted) !important; }
 .legend-label { font-size: .71rem; color: var(--muted); font-weight: 500; }
 
 /* ── Progress ring / section improvements ── */
-.card:hover { border-color: rgba(255,255,255,0.08); }
+.card:hover { border-color: rgba(5,150,105,0.12); }
 .card-accent:hover { border-left-color: var(--accent); }
 
 /* ── KPI card polish ── */
@@ -406,7 +406,7 @@ label { color: var(--muted) !important; }
 .kpi-card::after {
   content: '';
   position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.015) 0%, transparent 100%);
+  background: linear-gradient(135deg, rgba(5,150,105,0.03) 0%, transparent 100%);
   pointer-events: none;
 }
 
@@ -436,8 +436,8 @@ label { color: var(--muted) !important; }
   to   { opacity:1; transform:translateY(0);    }
 }
 @keyframes fitPulseGlow {
-  0%,100% { box-shadow: 0 0 8px rgba(255,179,71,.1); }
-  50%      { box-shadow: 0 0 26px rgba(255,179,71,.45); }
+  0%,100% { box-shadow: 0 0 8px rgba(217,119,6,.1); }
+  50%      { box-shadow: 0 0 20px rgba(217,119,6,.3); }
 }
 @keyframes barReveal {
   from { width: 0 !important; }
@@ -445,8 +445,8 @@ label { color: var(--muted) !important; }
 
 /* ── Score cockpit ── */
 .score-cockpit {
-  background: linear-gradient(135deg,#0D1F15 0%,#0A0A0A 55%,#0A0A1F 100%);
-  border: 1px solid rgba(0,255,135,.16);
+  background: linear-gradient(135deg, #ECFDF5 0%, #FFFFFF 55%, #EFF6FF 100%);
+  border: 1px solid rgba(5,150,105,0.18);
   border-radius: 16px;
   padding: 1.75rem 2rem;
   margin-bottom: 1.5rem;
@@ -454,7 +454,7 @@ label { color: var(--muted) !important; }
   align-items: center;
   gap: 2.5rem;
   flex-wrap: wrap;
-  box-shadow: 0 8px 48px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.03);
+  box-shadow: 0 4px 24px rgba(5,150,105,0.08), 0 1px 3px rgba(0,0,0,0.06);
   animation: fitSlideUp .5s ease both;
 }
 .score-ring-wrap { flex-shrink:0; }
@@ -474,9 +474,9 @@ label { color: var(--muted) !important; }
 /* ── Streak badge ── */
 .streak-badge {
   display:inline-flex; align-items:center; gap:.35rem;
-  background:rgba(255,179,71,.1); border:1px solid rgba(255,179,71,.25);
+  background:rgba(217,119,6,.08); border:1px solid rgba(217,119,6,.22);
   border-radius:20px; padding:.28rem .7rem;
-  font-size:.78rem; font-weight:700; color:#FFB347;
+  font-size:.78rem; font-weight:700; color:#D97706;
   margin-bottom:.7rem;
   animation: fitPulseGlow 2.5s ease-in-out infinite;
 }
@@ -490,9 +490,9 @@ label { color: var(--muted) !important; }
   animation:fitSlideUp .4s ease both;
 }
 .ring-card:hover {
-  border-color:rgba(0,255,135,.28);
+  border-color:rgba(5,150,105,.3);
   transform:translateY(-3px);
-  box-shadow:0 8px 28px rgba(0,0,0,.5);
+  box-shadow:0 8px 24px rgba(5,150,105,.1);
 }
 .ring-card-label {
   font-size:.63rem; font-weight:700;
@@ -526,6 +526,37 @@ label { color: var(--muted) !important; }
   text-transform:uppercase; letter-spacing:.09em; white-space:nowrap;
 }
 
+/* ── Theme toggle — fixed top-right ── */
+.theme-toggle-wrap {
+  position: fixed !important;
+  top: 0.65rem !important;
+  right: 1.25rem !important;
+  z-index: 99997 !important;
+  width: auto !important;
+}
+.theme-toggle-wrap .stButton {
+  margin: 0 !important;
+}
+.theme-toggle-wrap .stButton > button {
+  background: var(--surface2) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border2) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+  padding: 0.45rem 1.25rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  border-radius: 24px !important;
+  transform: none !important;
+  white-space: nowrap !important;
+}
+.theme-toggle-wrap .stButton > button:hover {
+  background: var(--accent) !important;
+  color: #FFFFFF !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 4px 12px rgba(5,150,105,0.25) !important;
+  transform: none !important;
+}
+
 /* ── Empty state ── */
 .empty-state {
   text-align:center; padding:2.5rem 1rem;
@@ -537,7 +568,56 @@ label { color: var(--muted) !important; }
 </style>
 """
 
-st.markdown(DARK_THEME_CSS, unsafe_allow_html=True)
+DARK_OVERRIDES_CSS = """
+<style>
+:root {
+  --bg:      #0A0A0A;
+  --surface: #111111;
+  --surface2:#1A1A1A;
+  --border:  #252525;
+  --border2: #333333;
+  --text:    #F1F5F9;
+  --muted:   #9CA3AF;
+  --shadow:  0 1px 3px rgba(0,0,0,.45), 0 1px 2px rgba(0,0,0,.3);
+  --glow:    0 0 20px rgba(16,185,129,.2);
+}
+section[data-testid="stSidebar"],
+[data-testid="stSidebar"] > div:first-child {
+  background: #0D0D0D !important;
+  border-right-color: #252525 !important;
+}
+.welcome-box {
+  background: linear-gradient(135deg, #0D1A0F 0%, #111111 100%) !important;
+  border-color: rgba(16,185,129,.15) !important;
+}
+.score-cockpit {
+  background: linear-gradient(135deg, #0D1F15 0%, #0A0A0A 55%, #0A0A1F 100%) !important;
+  border-color: rgba(16,185,129,.16) !important;
+  box-shadow: 0 8px 48px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.03) !important;
+}
+.ring-card:hover {
+  border-color: rgba(16,185,129,.28) !important;
+  box-shadow: 0 8px 28px rgba(0,0,0,.5) !important;
+}
+.streak-badge {
+  background: rgba(217,119,6,.12) !important;
+  border-color: rgba(217,119,6,.3) !important;
+  color: #FBB040 !important;
+}
+.activity-item:hover { border-color: rgba(255,255,255,.08) !important; }
+section[data-testid="stSidebar"] .stButton > button { color: #9CA3AF !important; }
+section[data-testid="stSidebar"] .stButton > button:hover { color: #10B981 !important; }
+.stTextInput > div > div > input:focus,
+.stNumberInput > div > div > input:focus {
+  box-shadow: 0 0 0 3px rgba(16,185,129,.15) !important;
+}
+</style>
+"""
+
+# ── Theme CSS injection ───────────────────────────────────────
+st.markdown(THEME_CSS, unsafe_allow_html=True)
+if st.session_state.get("theme") == "dark":
+    st.markdown(DARK_OVERRIDES_CSS, unsafe_allow_html=True)
 
 # ── Session state ─────────────────────────────────────────────
 
@@ -548,6 +628,7 @@ _DEFAULTS: dict = {
     "initial_load_done": False, "ai_nutrition": None,
     "achievements_checked": False, "achievements": [],
     "achievements_dismissed": False,
+    "theme": "light",
 }
 for k, v in _DEFAULTS.items():
     if k not in st.session_state:
@@ -578,8 +659,25 @@ def _get(path: str, params: dict | None = None):
 def _post(path: str, json: dict):
     try:
         r = _client().post(path, json=json, headers=_headers())
-        return r.json() if r.status_code in (200, 201) else None
-    except Exception:
+        if r.status_code in (200, 201):
+            return r.json()
+        try:
+            body = r.json()
+            errors = body.get("error", {}).get("details", {}).get("errors", [])
+            if errors:
+                msgs = "; ".join(
+                    f"{e.get('loc', ['?'])[-1]}: {e.get('msg', '')}"
+                    for e in errors[:3]
+                )
+                detail = msgs
+            else:
+                detail = body.get("detail", f"HTTP {r.status_code}")
+        except Exception:
+            detail = f"HTTP {r.status_code}"
+        st.error(f"Save failed: {detail}")
+        return None
+    except Exception as e:
+        st.error(f"Connection error: {e}")
         return None
 
 
@@ -717,50 +815,79 @@ def _workout_card(name: str, detail: str, date_str: str) -> None:
 def _dark_chart(fig, height: int = 270) -> None:
     if not HAS_PLOTLY:
         return
-    fig.update_layout(
-        template="plotly_dark",
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(255,255,255,0.015)",
-        margin=dict(l=4, r=4, t=18, b=4),
-        height=height,
-        font=dict(color="#9CA3AF", family="Inter, sans-serif", size=11),
-        xaxis=dict(
-            gridcolor="rgba(255,255,255,0.04)",
-            tickfont=dict(size=10, color="#6B7280"),
-            tickangle=-35,
-            showgrid=False,
-            linecolor="rgba(255,255,255,0.06)",
-        ),
-        yaxis=dict(
-            gridcolor="rgba(255,255,255,0.06)",
-            tickfont=dict(size=10, color="#6B7280"),
-            zeroline=False,
-            linecolor="rgba(255,255,255,0.06)",
-        ),
-        bargap=0.28,
-        hoverlabel=dict(
-            bgcolor="#1A1A1A",
-            bordercolor="#2A2A2A",
-            font=dict(color="#FFFFFF", size=12, family="Inter, sans-serif"),
-        ),
-        legend=dict(
-            orientation="h", yanchor="bottom", y=1.0,
-            xanchor="right", x=1,
-            font=dict(size=10), bgcolor="rgba(0,0,0,0)",
-        ),
-    )
+    _is_dark = st.session_state.get("theme") == "dark"
+    if _is_dark:
+        fig.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(255,255,255,0.015)",
+            margin=dict(l=4, r=4, t=18, b=4),
+            height=height,
+            font=dict(color="#9CA3AF", family="Inter, sans-serif", size=11),
+            xaxis=dict(
+                gridcolor="rgba(255,255,255,0.04)",
+                tickfont=dict(size=10, color="#6B7280"),
+                tickangle=-35, showgrid=False,
+                linecolor="rgba(255,255,255,0.06)",
+            ),
+            yaxis=dict(
+                gridcolor="rgba(255,255,255,0.06)",
+                tickfont=dict(size=10, color="#6B7280"),
+                zeroline=False, linecolor="rgba(255,255,255,0.06)",
+            ),
+            bargap=0.28,
+            hoverlabel=dict(
+                bgcolor="#1A1A1A", bordercolor="#2A2A2A",
+                font=dict(color="#FFFFFF", size=12, family="Inter, sans-serif"),
+            ),
+            legend=dict(
+                orientation="h", yanchor="bottom", y=1.0,
+                xanchor="right", x=1,
+                font=dict(size=10), bgcolor="rgba(0,0,0,0)",
+            ),
+        )
+    else:
+        fig.update_layout(
+            template="plotly_white",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            margin=dict(l=4, r=4, t=18, b=4),
+            height=height,
+            font=dict(color="#64748B", family="Inter, sans-serif", size=11),
+            xaxis=dict(
+                gridcolor="#F1F5F9",
+                tickfont=dict(size=10, color="#94A3B8"),
+                tickangle=-35, showgrid=False,
+                linecolor="#E2E8F0",
+            ),
+            yaxis=dict(
+                gridcolor="#F1F5F9",
+                tickfont=dict(size=10, color="#94A3B8"),
+                zeroline=False, linecolor="#E2E8F0",
+            ),
+            bargap=0.28,
+            hoverlabel=dict(
+                bgcolor="#FFFFFF", bordercolor="#E2E8F0",
+                font=dict(color="#0F172A", size=12, family="Inter, sans-serif"),
+            ),
+            legend=dict(
+                orientation="h", yanchor="bottom", y=1.0,
+                xanchor="right", x=1,
+                font=dict(size=10, color="#64748B"), bgcolor="rgba(0,0,0,0)",
+            ),
+        )
     st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
 def _goal_color(val: float, target: float) -> str:
     """3-tier color: green = met, amber = within 25%, red = far below."""
     if target <= 0:
-        return "#00FF87"
+        return "#059669"
     pct = val / target
     if pct >= 0.97:
-        return "#00FF87"
+        return "#059669"
     elif pct >= 0.70:
-        return "#FFB347"
+        return "#D97706"
     else:
         return "#FF6B6B"
 
@@ -768,8 +895,8 @@ def _goal_color(val: float, target: float) -> str:
 def _chart_legend(met_label: str = "Goal met", partial_label: str = "Within 30%", miss_label: str = "Below target") -> None:
     st.markdown(
         f'<div class="chart-legend">'
-        f'<span class="legend-dot" style="background:#00FF87;"></span><span class="legend-label">{met_label}</span>'
-        f'<span class="legend-dot" style="background:#FFB347;margin-left:.25rem;"></span><span class="legend-label">{partial_label}</span>'
+        f'<span class="legend-dot" style="background:#059669;"></span><span class="legend-label">{met_label}</span>'
+        f'<span class="legend-dot" style="background:#D97706;margin-left:.25rem;"></span><span class="legend-label">{partial_label}</span>'
         f'<span class="legend-dot" style="background:#FF6B6B;margin-left:.25rem;"></span><span class="legend-label">{miss_label}</span>'
         f'</div>',
         unsafe_allow_html=True,
@@ -781,11 +908,12 @@ def _ring_card(label: str, pct: float, val_str: str, sub: str, color: str, delay
     r, circ = 40, 251.33
     filled = min(pct / 100.0, 1.0) * circ
     gap    = max(circ - filled, 0.01)
+    _track = "#2A2A2A" if st.session_state.get("theme") == "dark" else "#E2E8F0"
     return (
         f'<div class="ring-card" style="animation-delay:{delay};">'
         f'<div class="ring-card-label">{label}</div>'
         f'<svg width="96" height="96" viewBox="0 0 96 96" style="overflow:visible;">'
-        f'<circle cx="48" cy="48" r="{r}" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="8"/>'
+        f'<circle cx="48" cy="48" r="{r}" fill="none" stroke="{_track}" stroke-width="8"/>'
         f'<circle cx="48" cy="48" r="{r}" fill="none" stroke="{color}" stroke-width="8"'
         f' stroke-linecap="round" stroke-dasharray="{filled:.2f} {gap:.2f}"'
         f' transform="rotate(-90 48 48)"'
@@ -806,6 +934,8 @@ def _score_cockpit_html(score: int, grade: str, grade_color: str, motivation: st
     r, circ = 50, 314.16
     filled = score / 100.0 * circ
     gap    = max(circ - filled, 0.01)
+    _track = "#2A2A2A" if st.session_state.get("theme") == "dark" else "#E2E8F0"
+    _score_text = "#F1F5F9" if st.session_state.get("theme") == "dark" else "#1E293B"
     streak_html = (
         f'<div class="streak-badge">🔥 {streak}-day streak</div>'
         if streak > 0 else ''
@@ -814,7 +944,7 @@ def _score_cockpit_html(score: int, grade: str, grade_color: str, motivation: st
         f'<div class="score-cockpit">'
         f'<div class="score-ring-wrap">'
         f'<svg width="138" height="138" viewBox="0 0 138 138" style="overflow:visible;">'
-        f'<circle cx="69" cy="69" r="{r}" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="10"/>'
+        f'<circle cx="69" cy="69" r="{r}" fill="none" stroke="{_track}" stroke-width="10"/>'
         f'<circle cx="69" cy="69" r="{r}" fill="none" stroke="{grade_color}" stroke-width="10"'
         f' stroke-linecap="round" stroke-dasharray="{filled:.2f} {gap:.2f}"'
         f' transform="rotate(-90 69 69)"'
@@ -823,7 +953,7 @@ def _score_cockpit_html(score: int, grade: str, grade_color: str, motivation: st
         f'<text x="69" y="62" text-anchor="middle" dominant-baseline="middle"'
         f' fill="{grade_color}" font-size="30" font-weight="900" font-family="Inter,sans-serif">{score}</text>'
         f'<text x="69" y="80" text-anchor="middle" dominant-baseline="middle"'
-        f' fill="#4B5563" font-size="9.5" font-family="Inter,sans-serif">out of 100</text>'
+        f' fill="{_score_text}" font-size="9.5" font-family="Inter,sans-serif">out of 100</text>'
         f'</svg>'
         f'<div class="score-ring-label">Performance Score</div>'
         f'</div>'
@@ -914,7 +1044,14 @@ def _check_achievements() -> None:
 
     def _pd(v) -> date | None:
         try:
-            return date.fromisoformat(str(v)) if v else None
+            if not v:
+                return None
+            s = str(v)
+            if "T" in s:
+                s = s.split("T")[0]
+            elif " " in s:
+                s = s.split(" ")[0]
+            return date.fromisoformat(s)
         except Exception:
             return None
 
@@ -930,7 +1067,7 @@ def _check_achievements() -> None:
         if pct >= 80:
             hits.append({"label": "Daily Steps", "pct": pct,
                          "detail": f"{avg_steps:,.0f} avg/day vs goal {steps_target:,}",
-                         "color": "#00FF87"})
+                         "color": "#059669"})
 
     if week_macros:
         avg_cals = sum(m.get("calories", 0) for m in week_macros) / len(week_macros)
@@ -938,21 +1075,21 @@ def _check_achievements() -> None:
         if cal_pct >= 80:
             hits.append({"label": "Calorie Target", "pct": cal_pct,
                          "detail": f"{avg_cals:,.0f} kcal avg vs target {cal_target:,}",
-                         "color": "#00C2FF"})
+                         "color": "#0891B2"})
 
         avg_prot = sum(m.get("protein_g", 0) for m in week_macros) / len(week_macros)
         prot_pct = min(100, int(avg_prot / protein_target * 100)) if protein_target else 0
         if prot_pct >= 80:
             hits.append({"label": "Protein Intake", "pct": prot_pct,
                          "detail": f"{avg_prot:.0f}g avg/day vs goal {protein_target:.0f}g",
-                         "color": "#FFB347"})
+                         "color": "#D97706"})
 
     if week_workouts:
         workout_pct = min(100, int(len(week_workouts) / max(freq_target, 1) * 100))
         if workout_pct >= 80:
             hits.append({"label": "Workout Frequency", "pct": workout_pct,
                          "detail": f"{len(week_workouts)} sessions this week vs goal {freq_target}",
-                         "color": "#00FF87"})
+                         "color": "#059669"})
 
     st.session_state.achievements = hits
 
@@ -990,13 +1127,13 @@ def show_dashboard():
     if achievements and not st.session_state.get("achievements_dismissed"):
         items_html = "".join(
             f'<div style="display:flex;align-items:center;justify-content:space-between;'
-            f'padding:.45rem .6rem;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:.3rem;">'
+            f'padding:.45rem .6rem;background:#F8FAFC;border-radius:8px;margin-bottom:.3rem;border:1px solid #E2E8F0;">'
             f'<div style="display:flex;align-items:center;gap:.6rem;">'
             f'<span style="font-size:1rem;">{"🏆" if h["pct"] >= 100 else "🔥"}</span>'
-            f'<div><div style="font-size:.82rem;font-weight:600;color:#fff;">{h["label"]}'
+            f'<div><div style="font-size:.82rem;font-weight:600;color:#0F172A;">{h["label"]}'
             f'<span style="margin-left:.4rem;font-size:.72rem;font-weight:700;'
             f'color:{h["color"]};">{h["pct"]}%</span></div>'
-            f'<div style="font-size:.72rem;color:#9CA3AF;">{h["detail"]}</div></div>'
+            f'<div style="font-size:.72rem;color:#64748B;">{h["detail"]}</div></div>'
             f'</div></div>'
             for h in achievements
         )
@@ -1006,13 +1143,13 @@ def show_dashboard():
             else f"You hit {len(achievements)} goal{'s' if len(achievements) > 1 else ''} at 80%+ this week — keep pushing!"
         )
         st.markdown(
-            f'<div style="border:1px solid rgba(0,255,135,0.25);border-left:3px solid #00FF87;'
+            f'<div style="border:1px solid rgba(5,150,105,0.25);border-left:3px solid #059669;'
             f'border-radius:10px;padding:1rem 1.1rem;margin-bottom:1rem;'
-            f'background:rgba(0,255,135,0.04);">'
-            f'<div style="font-size:.78rem;font-weight:700;color:#00FF87;'
+            f'background:rgba(5,150,105,0.04);">'
+            f'<div style="font-size:.78rem;font-weight:700;color:#059669;'
             f'text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">'
             f'This Week\'s Achievements</div>'
-            f'<div style="font-size:.85rem;color:#D1FAE5;margin-bottom:.65rem;">{headline}</div>'
+            f'<div style="font-size:.85rem;color:#065F46;margin-bottom:.65rem;">{headline}</div>'
             f'{items_html}'
             f'</div>',
             unsafe_allow_html=True,
@@ -1070,8 +1207,8 @@ def show_dashboard():
 
     k1, k2, k3, k4 = st.columns(4)
     with k1: _kpi("Today's Calories", f"{today_cals:.0f}", "kcal consumed")
-    with k2: _kpi("Workouts This Week", str(len(week_workouts)), "sessions logged", "#00C2FF")
-    with k3: _kpi("Current Streak", f"{streak}d", "consecutive days", "#FFB347")
+    with k2: _kpi("Workouts This Week", str(len(week_workouts)), "sessions logged", "#0891B2")
+    with k3: _kpi("Current Streak", f"{streak}d", "consecutive days", "#D97706")
     with k4: _kpi("Last Workout", last_w.get("exercise_name", "—")[:14] if last_w else "—", last_w.get("log_date", "") if last_w else "No workouts yet", "#FF6B6B")
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -1471,7 +1608,14 @@ def show_my_progress():
 
     def _pd(v) -> date | None:
         try:
-            return date.fromisoformat(str(v)) if v else None
+            if not v:
+                return None
+            s = str(v)
+            if "T" in s:
+                s = s.split("T")[0]
+            elif " " in s:
+                s = s.split(" ")[0]
+            return date.fromisoformat(s)
         except Exception:
             return None
 
@@ -1548,9 +1692,9 @@ def show_my_progress():
     freq_pct = min(100, int(avg_workouts_per_wk / max(freq_target, 1) * 100))
     score    = min(100, int((step_pct + cal_pct + prot_pct + freq_pct) / 4) + min(streak, 10))
 
-    if score >= 85:   grade, grade_color = "A", "#00FF87"
-    elif score >= 70: grade, grade_color = "B", "#00C2FF"
-    elif score >= 55: grade, grade_color = "C", "#FFB347"
+    if score >= 85:   grade, grade_color = "A", "#059669"
+    elif score >= 70: grade, grade_color = "B", "#0891B2"
+    elif score >= 55: grade, grade_color = "C", "#D97706"
     elif score >= 35: grade, grade_color = "D", "#FF8C00"
     else:             grade, grade_color = "F", "#FF6B6B"
 
@@ -1577,19 +1721,19 @@ def show_my_progress():
         st.markdown(_ring_card(
             "Steps", step_pct,
             f"{avg_steps:,.0f} avg/day" if range_steps else "No data",
-            f"Goal {steps_target:,}/day", "#00FF87", "0s",
+            f"Goal {steps_target:,}/day", "#059669", "0s",
         ), unsafe_allow_html=True)
     with c2:
         st.markdown(_ring_card(
             "Calories", cal_pct,
             f"{avg_cals:,.0f} kcal avg" if avg_cals else "No data",
-            f"Target {cal_target:,} kcal", "#00C2FF", "0.07s",
+            f"Target {cal_target:,} kcal", "#0891B2", "0.07s",
         ), unsafe_allow_html=True)
     with c3:
         st.markdown(_ring_card(
             "Protein", prot_pct,
             f"{avg_prot:.0f}g avg/day" if avg_prot else "No data",
-            f"Target {protein_target_g:.0f}g/day", "#FFB347", "0.14s",
+            f"Target {protein_target_g:.0f}g/day", "#D97706", "0.14s",
         ), unsafe_allow_html=True)
     with c4:
         sessions_label = f"{len(range_workouts)} sessions"
@@ -1597,7 +1741,7 @@ def show_my_progress():
             "Workouts", freq_pct,
             sessions_label,
             f"Goal {freq_target}×/wk avg",
-            "#00FF87" if freq_pct >= 100 else "#FF6B6B", "0.21s",
+            "#059669" if freq_pct >= 100 else "#FF6B6B", "0.21s",
         ), unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -1628,19 +1772,19 @@ def show_my_progress():
     _perf_bar("Steps",
               step_pct,
               f"{avg_steps:,.0f} / {steps_target:,} avg/day" if range_steps else "No data yet — log in Wellness",
-              "#00FF87", "0s")
+              "#059669", "0s")
     _perf_bar("Calorie accuracy",
               cal_pct,
               f"{avg_cals:,.0f} / {cal_target:,} kcal avg/day" if avg_cals else "No data yet — log in Nutrition",
-              "#00C2FF", "0.06s")
+              "#0891B2", "0.06s")
     _perf_bar("Protein intake",
               prot_pct,
               f"{avg_prot:.0f}g / {protein_target_g:.0f}g avg/day" if avg_prot else "No data yet — log in Nutrition",
-              "#FFB347", "0.12s")
+              "#D97706", "0.12s")
     _perf_bar("Workout frequency",
               freq_pct,
               f"{len(range_workouts)} sessions · {avg_workouts_per_wk:.1f}/wk avg vs goal {freq_target}/wk",
-              "#00FF87" if freq_pct >= 100 else "#FF6B6B", "0.18s")
+              "#059669" if freq_pct >= 100 else "#FF6B6B", "0.18s")
 
     st.markdown("</div>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
@@ -1669,13 +1813,13 @@ def show_my_progress():
             fig = go.Figure()
             fig.add_trace(go.Scatter(
                 x=sdates, y=svals, mode="lines+markers", name="Steps",
-                line=dict(color="#00FF87", width=2, shape="spline", smoothing=0.5),
+                line=dict(color="#059669", width=2, shape="spline", smoothing=0.5),
                 marker=dict(size=6, color=[_goal_color(v, steps_target) for v in svals],
-                            line=dict(width=1.5, color="#0A0A0A")),
-                fill="tozeroy", fillcolor="rgba(0,255,135,0.06)",
+                            line=dict(width=1.5, color="#FFFFFF")),
+                fill="tozeroy", fillcolor="rgba(5,150,105,0.08)",
                 hovertemplate="<b>%{x}</b><br>Steps: <b>%{y:,}</b><br>Goal: " + f"{steps_target:,}" + "<extra></extra>",
             ))
-            fig.add_hline(y=steps_target, line=dict(color="rgba(0,255,135,0.45)", dash="dot", width=1.5),
+            fig.add_hline(y=steps_target, line=dict(color="rgba(5,150,105,0.5)", dash="dot", width=1.5),
                           annotation_text=f"goal {steps_target:,}", annotation_font_color="#6B7280",
                           annotation_font_size=9, annotation_position="top right")
             fig.update_xaxes(range=x_range)
@@ -1699,17 +1843,17 @@ def show_my_progress():
             cvals  = [m.get("calories", 0) for m in cal_sorted]
             def _cal_color(v):
                 dev = abs(v - cal_target) / max(cal_target, 1)
-                return "#00C2FF" if dev <= 0.10 else "#FFB347" if dev <= 0.25 else "#FF6B6B"
+                return "#0891B2" if dev <= 0.10 else "#D97706" if dev <= 0.25 else "#FF6B6B"
             fig = go.Figure()
             fig.add_trace(go.Scatter(
                 x=cdates, y=cvals, mode="lines+markers", name="Calories",
-                line=dict(color="#00C2FF", width=2, shape="spline", smoothing=0.5),
+                line=dict(color="#0891B2", width=2, shape="spline", smoothing=0.5),
                 marker=dict(size=6, color=[_cal_color(v) for v in cvals],
-                            line=dict(width=1.5, color="#0A0A0A")),
-                fill="tozeroy", fillcolor="rgba(0,194,255,0.06)",
+                            line=dict(width=1.5, color="#FFFFFF")),
+                fill="tozeroy", fillcolor="rgba(8,145,178,0.06)",
                 hovertemplate="<b>%{x}</b><br>Calories: <b>%{y:,.0f} kcal</b><br>Target: " + f"{cal_target:,} kcal" + "<extra></extra>",
             ))
-            fig.add_hline(y=cal_target, line=dict(color="rgba(0,194,255,0.45)", dash="dot", width=1.5),
+            fig.add_hline(y=cal_target, line=dict(color="rgba(8,145,178,0.45)", dash="dot", width=1.5),
                           annotation_text=f"target {cal_target:,}", annotation_font_color="#6B7280",
                           annotation_font_size=9, annotation_position="top right")
             fig.update_xaxes(range=x_range)
@@ -1736,13 +1880,13 @@ def show_my_progress():
             fig = go.Figure()
             fig.add_trace(go.Scatter(
                 x=pdates, y=pvals, mode="lines+markers", name="Protein",
-                line=dict(color="#FFB347", width=2, shape="spline", smoothing=0.5),
+                line=dict(color="#D97706", width=2, shape="spline", smoothing=0.5),
                 marker=dict(size=6, color=[_goal_color(v, protein_target_g) for v in pvals],
-                            line=dict(width=1.5, color="#0A0A0A")),
-                fill="tozeroy", fillcolor="rgba(255,179,71,0.06)",
+                            line=dict(width=1.5, color="#FFFFFF")),
+                fill="tozeroy", fillcolor="rgba(217,119,6,0.06)",
                 hovertemplate="<b>%{x}</b><br>Protein: <b>%{y:.0f}g</b><br>Target: " + f"{protein_target_g:.0f}g" + "<extra></extra>",
             ))
-            fig.add_hline(y=protein_target_g, line=dict(color="rgba(255,179,71,0.45)", dash="dot", width=1.5),
+            fig.add_hline(y=protein_target_g, line=dict(color="rgba(217,119,6,0.45)", dash="dot", width=1.5),
                           annotation_text=f"target {protein_target_g:.0f}g", annotation_font_color="#6B7280",
                           annotation_font_size=9, annotation_position="top right")
             fig.update_xaxes(range=x_range)
@@ -1769,13 +1913,13 @@ def show_my_progress():
             fig = go.Figure()
             fig.add_trace(go.Scatter(
                 x=wlabels, y=wcounts, mode="lines+markers", name="Sessions",
-                line=dict(color="#00FF87", width=2, shape="spline", smoothing=0.4),
+                line=dict(color="#059669", width=2, shape="spline", smoothing=0.4),
                 marker=dict(size=8, color=[_goal_color(v, freq_target) for v in wcounts],
-                            line=dict(width=1.5, color="#0A0A0A")),
-                fill="tozeroy", fillcolor="rgba(0,255,135,0.06)",
+                            line=dict(width=1.5, color="#FFFFFF")),
+                fill="tozeroy", fillcolor="rgba(5,150,105,0.08)",
                 hovertemplate="<b>Week of %{x}</b><br>Sessions: <b>%{y}</b><br>Goal: " + str(freq_target) + "/week<extra></extra>",
             ))
-            fig.add_hline(y=freq_target, line=dict(color="rgba(0,255,135,0.45)", dash="dot", width=1.5),
+            fig.add_hline(y=freq_target, line=dict(color="rgba(5,150,105,0.5)", dash="dot", width=1.5),
                           annotation_text=f"goal {freq_target}×", annotation_font_color="#6B7280",
                           annotation_font_size=9, annotation_position="top right")
             fig.update_yaxes(dtick=1, tickformat="d")
@@ -1801,21 +1945,85 @@ def show_my_progress():
         fig = go.Figure()
         fig.add_trace(go.Scatter(
             x=wdates, y=wvals, mode="lines+markers", name="Weight",
-            line=dict(color="#00FF87", width=2.5, shape="spline", smoothing=0.6),
-            marker=dict(size=6, color="#00FF87", line=dict(width=1.5, color="#0A0A0A")),
-            fill="tozeroy", fillcolor="rgba(0,255,135,0.05)",
+            line=dict(color="#059669", width=2.5, shape="spline", smoothing=0.6),
+            marker=dict(size=6, color="#059669", line=dict(width=1.5, color="#FFFFFF")),
+            fill="tozeroy", fillcolor="rgba(5,150,105,0.08)",
             hovertemplate="<b>%{x}</b><br>Weight: <b>%{y:.1f} kg</b><extra></extra>",
         ))
-        fig.add_hline(y=weight_kg, line=dict(color="rgba(255,179,71,0.35)", dash="dot", width=1.5),
+        fig.add_hline(y=weight_kg, line=dict(color="rgba(217,119,6,0.35)", dash="dot", width=1.5),
                       annotation_text=f"profile {weight_kg:.1f} kg", annotation_font_color="#6B7280",
                       annotation_font_size=9, annotation_position="top right")
         fig.add_annotation(x=wdates[wvals.index(w_min)], y=w_min, text=f"low {w_min:.1f}kg",
                            showarrow=False, font=dict(size=9, color="#FF6B6B"), yshift=-14)
         fig.add_annotation(x=wdates[wvals.index(w_max)], y=w_max, text=f"high {w_max:.1f}kg",
-                           showarrow=False, font=dict(size=9, color="#00FF87"), yshift=12)
+                           showarrow=False, font=dict(size=9, color="#059669"), yshift=12)
         fig.update_xaxes(range=x_range)
         _dark_chart(fig, 220)
         st.markdown("</div>", unsafe_allow_html=True)
+
+    # ── Body Composition Charts ───────────────────────────────
+    st.markdown(
+        '<div class="progress-hdr"><div class="progress-hdr-text">Body Composition</div>'
+        '<div class="progress-hdr-line"></div></div>',
+        unsafe_allow_html=True,
+    )
+
+    bm_in_range = sorted(
+        [m for m in metrics if range_start <= (_pd(m.get("entry_date")) or date.min) <= range_end],
+        key=lambda x: _pd(x.get("entry_date")) or date.min,
+    )
+    bm_dates = [str(_pd(m["entry_date"])) for m in bm_in_range]
+
+    bf_data = [(d, m["body_fat_pct"]) for d, m in zip(bm_dates, bm_in_range) if m.get("body_fat_pct") is not None]
+    wt_data = [(d, m["weight_kg"])    for d, m in zip(bm_dates, bm_in_range) if m.get("weight_kg")    is not None]
+
+    has_any = any([bf_data, wt_data])
+    if not has_any:
+        st.markdown(
+            '<div class="empty-state" style="padding:1.5rem;">'
+            '<div class="empty-state-icon">⚖️</div>'
+            '<div class="empty-state-sub">No body metric data in range — log entries in '
+            '<strong>Wellness → Body Metrics</strong></div></div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        # Body fat % chart (full-width)
+        st.markdown('<div class="card">', unsafe_allow_html=True)
+        _section_hdr("Body Fat %")
+        if bf_data:
+            bf_dates, bf_vals = zip(*bf_data)
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=list(bf_dates), y=list(bf_vals),
+                mode="lines+markers", name="Body Fat",
+                line=dict(color="#FF6B6B", width=2, shape="spline", smoothing=0.5),
+                marker=dict(size=6, color="#FF6B6B", line=dict(width=1.5, color="#FFFFFF")),
+                fill="tozeroy", fillcolor="rgba(255,107,107,0.06)",
+                hovertemplate="<b>%{x}</b><br>Body Fat: <b>%{y:.1f}%</b><extra></extra>",
+            ))
+            bf_min, bf_max = min(bf_vals), max(bf_vals)
+            if bf_min != bf_max:
+                fig.add_annotation(
+                    x=bf_dates[list(bf_vals).index(bf_min)], y=bf_min,
+                    text=f"low {bf_min:.1f}%", showarrow=False,
+                    font=dict(size=9, color="#059669"), yshift=-14,
+                )
+                fig.add_annotation(
+                    x=bf_dates[list(bf_vals).index(bf_max)], y=bf_max,
+                    text=f"high {bf_max:.1f}%", showarrow=False,
+                    font=dict(size=9, color="#FF6B6B"), yshift=12,
+                )
+            fig.update_xaxes(range=x_range)
+            fig.update_yaxes(ticksuffix="%")
+            _dark_chart(fig, 240)
+        else:
+            st.markdown(
+                '<div class="empty-state" style="padding:1rem;">'
+                '<div class="empty-state-sub">No body fat data in range</div></div>',
+                unsafe_allow_html=True,
+            )
+        st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 # ── Wellness ──────────────────────────────────────────────────
@@ -1834,7 +2042,7 @@ def show_wellness():
             h_ml   = st.number_input("Water (ml)", 0, 20000, 500, 250)
             h_note = st.text_input("Notes", key="h_note")
             if st.form_submit_button("Log Water", use_container_width=True):
-                r = _create("/hydration/", {"profile_id": pid, "entry_date": str(h_date),
+                r = _create("/hydration/", {"profile_id": pid or None, "entry_date": str(h_date),
                     "water_ml": float(h_ml), "notes": h_note or None}, get_hydration.clear)
                 if r: st.success("Logged!"); st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
@@ -1865,11 +2073,11 @@ def show_wellness():
                 b_bf = st.number_input("Body Fat %", 0.0, 100.0, 0.0, 0.5)
             with c2:
                 b_wa = st.number_input("Waist (cm)", 0.0, 300.0, 0.0, 0.5)
-                b_hr = st.number_input("Resting HR", 0, 250, 0)
+                b_hr = st.number_input("Resting HR (bpm, 0 = skip)", 0, 250, 0)
             if st.form_submit_button("Log Metrics", use_container_width=True):
-                r = _create("/body-metrics/", {"profile_id": pid, "entry_date": str(b_date),
+                r = _create("/body-metrics/", {"profile_id": pid or None, "entry_date": str(b_date),
                     "weight_kg": float(b_w) if b_w>0 else None, "body_fat_pct": float(b_bf) if b_bf>0 else None,
-                    "waist_cm": float(b_wa) if b_wa>0 else None, "resting_hr": int(b_hr) if b_hr>0 else None}, get_body_metrics.clear)
+                    "waist_cm": float(b_wa) if b_wa>0 else None, "resting_hr": int(b_hr) if b_hr>=20 else None}, get_body_metrics.clear)
                 if r: st.success("Logged!"); st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
         for idx, e in enumerate(get_body_metrics(token, pid)[:10]):
@@ -1898,7 +2106,7 @@ def show_wellness():
                 st_note  = st.text_input("Notes", key="st_note")
             if st.form_submit_button("Log Steps", use_container_width=True):
                 r = _create("/steps/", {
-                    "profile_id": pid, "entry_date": str(st_date),
+                    "profile_id": pid or None, "entry_date": str(st_date),
                     "steps": int(st_steps),
                     "distance_km": float(st_dist) if st_dist > 0 else None,
                     "active_minutes": int(st_mins) if st_mins > 0 else None,
@@ -1911,13 +2119,13 @@ def show_wellness():
         if entries:
             for idx, e in enumerate(entries):
                 pct = min(100, int(e.get("steps", 0) / _STEPS_GOAL * 100))
-                bar_color = "#00FF87" if pct >= 100 else ("#FFB347" if pct >= 70 else "#FF6B6B")
+                bar_color = "#059669" if pct >= 100 else ("#D97706" if pct >= 70 else "#FF6B6B")
                 c1, c2, c3, c4 = st.columns([2, 2, 2, 1])
                 with c1: st.markdown(f"**{e.get('entry_date','')}**")
                 with c2: st.caption(f"{e.get('steps',0):,} steps  ({pct}% of goal)")
                 with c3:
                     st.markdown(
-                        f'<div style="height:4px;background:#1E1E1E;border-radius:2px;margin-top:.6rem;">'
+                        f'<div style="height:4px;background:#E2E8F0;border-radius:2px;margin-top:.6rem;">'
                         f'<div style="height:100%;width:{pct}%;background:{bar_color};border-radius:2px;"></div></div>',
                         unsafe_allow_html=True,
                     )
@@ -1934,124 +2142,253 @@ def show_profile():
     token = st.session_state.token
     user  = st.session_state.user or {}
 
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    _section_hdr("Your Account")
+    _GOAL_META: dict[str, tuple[str, str, str]] = {
+        "muscle":         ("Build Muscle",    "#059669", "rgba(5,150,105,.12)"),
+        "weight_loss":    ("Lose Weight",     "#D97706", "rgba(217,119,6,.12)"),
+        "maintenance":    ("Maintain",        "#0891B2", "rgba(8,145,178,.12)"),
+        "endurance":      ("Endurance",       "#7C3AED", "rgba(124,58,237,.12)"),
+        "strength":       ("Strength",        "#DC2626", "rgba(220,38,38,.12)"),
+        "general_health": ("General Health",  "#0891B2", "rgba(8,145,178,.12)"),
+        "fit":            ("General Fitness", "#059669", "rgba(5,150,105,.12)"),
+    }
+
+    # ── Account hero card ─────────────────────────────────────────
+    uname    = user.get("name", "User")
+    uemail   = user.get("email", "")
+    initials = "".join(w[0].upper() for w in uname.split()[:2]) or "U"
+
     st.markdown(f"""
-    <div style="text-align:center; padding:1rem 0;">
-      <div style="width:72px;height:72px;background:rgba(0,255,135,0.12);border:2px solid var(--accent);
-           border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;margin:0 auto 0.75rem;">👤</div>
-      <h3 style="margin:0;color:var(--text);">{user.get("name","User")}</h3>
-      <p style="margin:0.2rem 0 0;color:var(--muted);">{user.get("email","")}</p>
+    <div class="card" style="padding:1.5rem 1.5rem 1.25rem;margin-bottom:1.25rem;">
+      <div style="display:flex;align-items:center;gap:1.1rem;">
+        <div style="flex-shrink:0;width:60px;height:60px;border-radius:50%;
+             background:linear-gradient(135deg,#059669 0%,#0891B2 100%);
+             display:flex;align-items:center;justify-content:center;
+             font-size:1.35rem;font-weight:800;color:#fff;letter-spacing:-.02em;
+             box-shadow:0 4px 18px rgba(5,150,105,.30);">{initials}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:1.05rem;font-weight:700;color:var(--text);
+               white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{uname}</div>
+          <div style="font-size:.8rem;color:var(--muted);margin-top:.1rem;">{uemail}</div>
+          <div style="margin-top:.45rem;">
+            <span style="font-size:.7rem;font-weight:700;color:var(--accent);
+                 background:rgba(5,150,105,.1);border-radius:20px;
+                 padding:.18rem .6rem;letter-spacing:.04em;text-transform:uppercase;">FitLog Member</span>
+          </div>
+        </div>
+      </div>
     </div>""", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown('<div class="card">', unsafe_allow_html=True)
-    _section_hdr("Fitness Profiles")
-    profiles = get_profiles(token)
-    if profiles:
-        for p in profiles:
-            is_sel = str(p.get("id")) == str(st.session_state.selected_profile_id)
-            border = "border:2px solid var(--accent);background:rgba(0,255,135,0.06);" if is_sel else "border:1px solid var(--border);background:var(--surface2);"
-            st.markdown(f"""
-            <div style="{border}border-radius:var(--r-sm);padding:0.85rem 1rem;margin-bottom:0.5rem;">
-              <strong style="color:var(--text);">{p.get("name","Unnamed")}</strong>
-              {"<span style='float:right;color:var(--accent);font-size:0.8rem;font-weight:600;'>✓ Active</span>" if is_sel else ""}
-            </div>""", unsafe_allow_html=True)
-            if not is_sel and st.button(f"Select '{p.get('name','')}'", key=f"sel_{p['id']}"):
-                st.session_state.selected_profile_id   = p["id"]
-                st.session_state.selected_profile_name = p.get("name","")
+    # ── Profiles list ─────────────────────────────────────────────
+    profiles   = get_profiles(token)
+    confirm_id = st.session_state.get("confirm_delete_id")
+
+    hdr_l, hdr_r = st.columns([3, 1])
+    with hdr_l:
+        count_txt = f"{len(profiles)} profile{'s' if len(profiles) != 1 else ''}"
+        _section_hdr(f"Fitness Profiles  ·  {count_txt}")
+    with hdr_r:
+        btn_label = "Cancel" if st.session_state.get("show_create_profile") else "+ New"
+        if st.button(btn_label, key="btn_toggle_create", use_container_width=True):
+            st.session_state.show_create_profile = not st.session_state.get("show_create_profile", False)
+            st.rerun()
+
+    # Inline create form
+    if st.session_state.get("show_create_profile", False):
+        st.markdown("""<div style="border:1.5px solid var(--accent);border-radius:12px;
+             padding:1.2rem 1.2rem .4rem;margin-bottom:1rem;
+             background:rgba(5,150,105,.04);">""", unsafe_allow_html=True)
+        _section_hdr("New Profile")
+        with st.form("create_profile_form", clear_on_submit=True):
+            cf_name = st.text_input("Profile Name", placeholder="e.g., Bulk Phase Q2")
+            cf1, cf2 = st.columns(2)
+            with cf1:
+                cf_weight = st.number_input("Weight (kg)", 30.0, 300.0, 75.0, 0.5)
+                cf_age    = st.number_input("Age", 10, 120, 25)
+            with cf2:
+                cf_height = st.number_input("Height (cm)", 100.0, 250.0, 175.0, 0.5)
+                cf_gender = st.selectbox("Gender", ["male", "female", "other"])
+            cf_goal = st.selectbox(
+                "Goal",
+                list(_GOAL_META.keys()),
+                format_func=lambda x: _GOAL_META[x][0],
+            )
+            cfsub1, cfsub2 = st.columns(2)
+            with cfsub1:
+                cf_submitted = st.form_submit_button("Create Profile", use_container_width=True)
+            with cfsub2:
+                cf_cancelled = st.form_submit_button("Discard", use_container_width=True)
+            if cf_submitted:
+                if not cf_name.strip():
+                    st.warning("Profile name is required.")
+                else:
+                    r = _post("/profile/", {
+                        "name": cf_name.strip(), "weight_kg": float(cf_weight),
+                        "height_cm": float(cf_height), "age": int(cf_age),
+                        "gender": cf_gender, "goal": cf_goal,
+                    })
+                    if r and r.get("id"):
+                        get_profiles.clear()
+                        st.session_state.selected_profile_id   = r["id"]
+                        st.session_state.selected_profile_name = r.get("name", "")
+                        st.session_state.show_create_profile   = False
+                        st.success(f"Profile '{r['name']}' created.")
+                        st.rerun()
+                    else:
+                        st.error("Could not create profile — please try again.")
+            if cf_cancelled:
+                st.session_state.show_create_profile = False
                 st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    with st.expander("+ Create New Profile"):
-        with st.form("create_profile"):
-            pname  = st.text_input("Profile Name", placeholder="e.g., Bulk Phase")
-            c1, c2 = st.columns(2)
-            with c1:
-                weight = st.number_input("Weight (kg)", 30.0, 300.0, 75.0, 0.5)
-                age    = st.number_input("Age", 10, 120, 25)
-            with c2:
-                height = st.number_input("Height (cm)", 100.0, 250.0, 175.0, 0.5)
-                gender = st.selectbox("Gender", ["male", "female", "other"])
-            goal = st.selectbox("Goal", ["muscle","weight_loss","maintenance","endurance","strength","general_health"],
-                format_func=lambda x: {"muscle":"Build Muscle","weight_loss":"Lose Weight","maintenance":"Maintain","endurance":"Endurance","strength":"Strength & Power","general_health":"General Health"}.get(x,x))
-            if st.form_submit_button("Create Profile"):
-                r = _create("/profile/", {"name": pname, "weight_kg": float(weight), "height_cm": float(height),
-                    "age": int(age), "gender": gender, "goal": goal}, get_profiles.clear)
-                if r:
-                    st.success("Profile created!")
-                    get_profiles.clear()
-                    st.session_state.selected_profile_id   = r["id"]
-                    st.session_state.selected_profile_name = r.get("name","")
-                    st.rerun()
+    if not profiles:
+        st.markdown("""
+        <div style="text-align:center;padding:2.5rem 1rem;border:1.5px dashed var(--border2);
+             border-radius:12px;margin-bottom:1rem;">
+          <div style="font-size:2rem;font-weight:300;color:var(--border2);margin-bottom:.65rem;">◈</div>
+          <div style="font-size:.95rem;font-weight:600;color:var(--text);margin-bottom:.3rem;">No profiles yet</div>
+          <div style="font-size:.82rem;color:var(--muted);">
+            Create your first fitness profile to unlock all tracking features.
+          </div>
+        </div>""", unsafe_allow_html=True)
+    else:
+        for p in profiles:
+            pid    = str(p.get("id", ""))
+            pname_ = p.get("name", "Unnamed")
+            is_sel = pid == str(st.session_state.get("selected_profile_id") or "")
+            goal_k = (p.get("goal") or "fit").lower()
+            g_label, g_color, g_bg = _GOAL_META.get(goal_k, ("Fitness", "#0891B2", "rgba(8,145,178,.12)"))
+            w_kg   = p.get("weight_kg", "—")
+            h_cm   = p.get("height_cm", "—")
+            age_v  = p.get("age", "—")
+            gen_v  = (p.get("gender") or "").capitalize()
 
-    # Goals editor — only shown when a profile is active
-    active_pid = str(st.session_state.selected_profile_id or "")
+            card_style = (
+                "border:2px solid var(--accent);box-shadow:0 0 0 4px rgba(5,150,105,.07);"
+                if is_sel else "border:1px solid var(--border);"
+            )
+            active_badge = (
+                '<span style="font-size:.68rem;font-weight:700;color:#fff;background:#059669;'
+                'border-radius:20px;padding:.15rem .5rem;margin-left:.45rem;letter-spacing:.05em;">ACTIVE</span>'
+                if is_sel else ""
+            )
+
+            st.markdown(f"""
+            <div style="{card_style}border-radius:12px;padding:1rem 1.1rem .85rem;
+                 margin-bottom:.5rem;background:var(--surface2);">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;
+                   margin-bottom:.55rem;gap:.5rem;">
+                <div style="min-width:0;">
+                  <span style="font-size:.95rem;font-weight:700;color:var(--text);">{pname_}</span>
+                  {active_badge}
+                </div>
+                <span style="flex-shrink:0;font-size:.7rem;font-weight:700;color:{g_color};
+                     background:{g_bg};border-radius:20px;padding:.18rem .6rem;">{g_label}</span>
+              </div>
+              <div style="display:flex;gap:1.2rem;flex-wrap:wrap;">
+                <span style="font-size:.76rem;color:var(--muted);">
+                  Weight&nbsp;<strong style="color:var(--text);">{w_kg} kg</strong></span>
+                <span style="font-size:.76rem;color:var(--muted);">
+                  Height&nbsp;<strong style="color:var(--text);">{h_cm} cm</strong></span>
+                <span style="font-size:.76rem;color:var(--muted);">
+                  Age&nbsp;<strong style="color:var(--text);">{age_v}</strong></span>
+                <span style="font-size:.76rem;color:var(--muted);">
+                  {gen_v}</span>
+              </div>
+            </div>""", unsafe_allow_html=True)
+
+            # ── Confirm-delete banner ─────────────────────────────
+            if confirm_id == pid:
+                st.markdown(f"""
+                <div style="border:1.5px solid #DC2626;border-radius:8px;padding:.65rem 1rem;
+                     margin-bottom:.5rem;margin-top:-.3rem;background:rgba(220,38,38,.05);">
+                  <span style="font-size:.84rem;font-weight:600;color:#DC2626;">
+                    Remove <em>{pname_}</em>? This cannot be undone.
+                  </span>
+                </div>""", unsafe_allow_html=True)
+                cc1, cc2 = st.columns(2)
+                with cc1:
+                    if st.button("Keep it", key=f"cancel_del_{pid}", use_container_width=True):
+                        del st.session_state["confirm_delete_id"]
+                        st.rerun()
+                with cc2:
+                    if st.button("Yes, remove", key=f"confirm_del_{pid}",
+                                 use_container_width=True, type="primary"):
+                        ok = _delete(f"/profile/{pid}")
+                        if ok:
+                            get_profiles.clear()
+                            if is_sel:
+                                st.session_state.selected_profile_id   = None
+                                st.session_state.selected_profile_name = ""
+                            if "confirm_delete_id" in st.session_state:
+                                del st.session_state["confirm_delete_id"]
+                            st.success(f"Profile '{pname_}' removed.")
+                            st.rerun()
+                        else:
+                            st.error("Delete failed — please try again.")
+            else:
+                # ── Normal action row ─────────────────────────────
+                if is_sel:
+                    acol, = st.columns([1])
+                    with acol:
+                        if st.button("Remove", key=f"del_{pid}", use_container_width=True):
+                            st.session_state.confirm_delete_id = pid
+                            st.rerun()
+                else:
+                    a1, a2 = st.columns(2)
+                    with a1:
+                        if st.button("Activate", key=f"sel_{pid}", use_container_width=True):
+                            st.session_state.selected_profile_id   = pid
+                            st.session_state.selected_profile_name = pname_
+                            st.rerun()
+                    with a2:
+                        if st.button("Remove", key=f"del_{pid}", use_container_width=True):
+                            st.session_state.confirm_delete_id = pid
+                            st.rerun()
+
+    # ── Goals editor (active profile only) ────────────────────────
+    active_pid = str(st.session_state.get("selected_profile_id") or "")
     if active_pid:
-        active_name = st.session_state.get("selected_profile_name", "Active Profile")
+        active_name = st.session_state.get("selected_profile_name", "Profile")
+        p_obj  = next((p for p in profiles if str(p.get("id")) == active_pid), {})
+        w_kg   = float(p_obj.get("weight_kg") or 75)
+        h_cm   = float(p_obj.get("height_cm") or 175)
+        age_v  = int(p_obj.get("age") or 30)
+        gen_v  = (p_obj.get("gender") or "male").lower()
+        goal_v = (p_obj.get("goal") or "fit").lower()
+        tdee   = (10 * w_kg + 6.25 * h_cm - 5 * age_v + (5 if gen_v == "male" else -161)) * 1.55
+        auto_cal  = round(tdee + (300 if goal_v == "muscle" else -500 if goal_v == "weight_loss" else 0))
+        auto_prot = round(w_kg * (2.0 if goal_v == "muscle" else 1.6))
 
-        # Compute auto targets for display hints
-        profiles_g = get_profiles(token)
-        p_obj_g = next((p for p in profiles_g if str(p.get("id")) == active_pid), {})
-        w_kg_g  = float(p_obj_g.get("weight_kg") or 75)
-        h_cm_g  = float(p_obj_g.get("height_cm") or 175)
-        age_g   = int(p_obj_g.get("age") or 30)
-        gen_g   = (p_obj_g.get("gender") or "male").lower()
-        goal_g  = (p_obj_g.get("goal") or "fit").lower()
-        tdee_g  = (10 * w_kg_g + 6.25 * h_cm_g - 5 * age_g + (5 if gen_g == "male" else -161)) * 1.55
-        auto_cal_g  = round(tdee_g + (300 if goal_g == "muscle" else -500 if goal_g == "weight_loss" else 0))
-        auto_prot_g = round(w_kg_g * (2.0 if goal_g == "muscle" else 1.6))
-
-        with st.expander(f"Edit Goals — {active_name}"):
+        st.markdown('<div style="margin-top:.75rem;"></div>', unsafe_allow_html=True)
+        with st.expander(f"Daily Goals — {active_name}"):
             g = get_goals(token, active_pid)
             with st.form("goals_form"):
-                _section_hdr("Daily Targets")
                 gc1, gc2 = st.columns(2)
                 with gc1:
-                    g_steps = st.number_input(
-                        "Daily Steps",
-                        min_value=0, max_value=100000,
-                        value=int(g.get("daily_steps") or 10000),
-                        step=500,
-                    )
-                    g_water = st.number_input(
-                        "Daily Water (ml)",
-                        min_value=0, max_value=10000,
-                        value=int(g.get("daily_water_ml") or 2000),
-                        step=100,
-                    )
-                    override_cals = st.checkbox(
-                        "Set custom calorie target",
+                    g_steps = st.number_input("Daily Steps", min_value=0, max_value=100000,
+                        value=int(g.get("daily_steps") or 10000), step=500)
+                    g_water = st.number_input("Daily Water (ml)", min_value=0, max_value=10000,
+                        value=int(g.get("daily_water_ml") or 2000), step=100)
+                    override_cals = st.checkbox("Custom calorie target",
                         value=bool(g.get("daily_calories")),
-                        help=f"Auto-computed from your TDEE: ~{auto_cal_g} kcal/day",
-                    )
+                        help=f"Auto-computed TDEE: ~{auto_cal} kcal/day")
                     g_cals = st.number_input(
-                        f"Daily Calories (kcal)  —  auto: {auto_cal_g}",
+                        f"Daily Calories (kcal)  —  auto: {auto_cal}",
                         min_value=500, max_value=20000,
-                        value=int(g.get("daily_calories") or auto_cal_g),
-                        step=50,
-                        disabled=not override_cals,
-                    )
+                        value=int(g.get("daily_calories") or auto_cal),
+                        step=50, disabled=not override_cals)
                 with gc2:
-                    g_wk = st.number_input(
-                        "Workouts per Week",
-                        min_value=0, max_value=14,
-                        value=int(g.get("weekly_workouts") or 4),
-                        step=1,
-                    )
-                    override_prot = st.checkbox(
-                        "Set custom protein target",
+                    g_wk = st.number_input("Workouts / Week", min_value=0, max_value=14,
+                        value=int(g.get("weekly_workouts") or 4), step=1)
+                    override_prot = st.checkbox("Custom protein target",
                         value=bool(g.get("daily_protein_g")),
-                        help=f"Auto-computed from body weight × goal multiplier: ~{auto_prot_g}g/day",
-                    )
+                        help=f"Auto-computed: ~{auto_prot}g/day")
                     g_prot = st.number_input(
-                        f"Daily Protein (g)  —  auto: {auto_prot_g}g",
+                        f"Daily Protein (g)  —  auto: {auto_prot}g",
                         min_value=10.0, max_value=500.0,
-                        value=float(g.get("daily_protein_g") or float(auto_prot_g)),
-                        step=5.0,
-                        disabled=not override_prot,
-                    )
-                if st.form_submit_button("Save Goals"):
+                        value=float(g.get("daily_protein_g") or float(auto_prot)),
+                        step=5.0, disabled=not override_prot)
+                if st.form_submit_button("Save Goals", use_container_width=True):
                     payload: dict = {
                         "daily_steps": g_steps,
                         "weekly_workouts": g_wk,
@@ -2088,13 +2425,13 @@ def show_main_app():
         st.markdown(f"""
         <div style="padding:0.5rem 0 1.25rem 0;">
           <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:.5rem;">
-            <div style="width:36px;height:36px;background:#00FF87;border-radius:9px;
+            <div style="width:36px;height:36px;background:#059669;border-radius:9px;
                  display:flex;align-items:center;justify-content:center;
-                 font-size:13px;font-weight:800;color:#0A0A0A;letter-spacing:-.5px;
-                 flex-shrink:0;box-shadow:0 2px 12px rgba(0,255,135,.3);">FL</div>
-            <span style="font-size:1.15rem;font-weight:800;color:#fff;letter-spacing:-.02em;">FitLog</span>
+                 font-size:13px;font-weight:800;color:#FFFFFF;letter-spacing:-.5px;
+                 flex-shrink:0;box-shadow:0 2px 12px rgba(5,150,105,.3);">FL</div>
+            <span style="font-size:1.15rem;font-weight:800;color:var(--text);letter-spacing:-.02em;">FitLog</span>
           </div>
-          <div style="font-size:.78rem;color:#6B7280;">{user_name}</div>
+          <div style="font-size:.78rem;color:var(--muted);">{user_name}</div>
         </div>""", unsafe_allow_html=True)
 
         if pnames:
@@ -2114,11 +2451,11 @@ def show_main_app():
             st.caption("No profiles — create one in Profile")
 
         st.markdown(
-            '<hr style="border:none;border-top:1px solid #1E1E1E;margin:1rem 0 0.5rem;">',
+            '<hr style="border:none;border-top:1px solid var(--border);margin:1rem 0 0.5rem;">',
             unsafe_allow_html=True,
         )
         st.markdown(
-            '<div style="font-size:.62rem;font-weight:700;color:#374151;letter-spacing:.1em;'
+            '<div style="font-size:.62rem;font-weight:700;color:var(--muted);letter-spacing:.1em;'
             'text-transform:uppercase;padding:0 0.5rem;margin-bottom:.3rem;">Menu</div>',
             unsafe_allow_html=True,
         )
@@ -2139,9 +2476,9 @@ def show_main_app():
                 st.markdown(
                     f'<div data-nav-active style="display:flex;align-items:center;gap:.55rem;'
                     f'padding:.52rem .9rem;border-radius:8px;'
-                    f'background:rgba(0,255,135,0.09);">'
-                    f'<span style="font-size:.72rem;color:#00FF87;">{icon}</span>'
-                    f'<span style="font-size:.83rem;font-weight:600;color:#00FF87;">{label}</span>'
+                    f'background:rgba(5,150,105,0.09);">'
+                    f'<span style="font-size:.72rem;color:#059669;">{icon}</span>'
+                    f'<span style="font-size:.83rem;font-weight:600;color:#059669;">{label}</span>'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
@@ -2151,7 +2488,7 @@ def show_main_app():
                     st.rerun()
 
         st.markdown(
-            '<hr style="border:none;border-top:1px solid #1E1E1E;margin:.5rem 0 .3rem;">',
+            '<hr style="border:none;border-top:1px solid #E2E8F0;margin:.5rem 0 .3rem;">',
             unsafe_allow_html=True,
         )
         if st.button("Sign Out", key="signout", use_container_width=True):
@@ -2165,6 +2502,14 @@ def show_main_app():
 
     _check_achievements()
 
+    # ── Theme toggle — fixed top-right corner ────────────────
+    is_dark = st.session_state.get("theme") == "dark"
+    st.markdown('<div class="theme-toggle-wrap">', unsafe_allow_html=True)
+    if st.button("☀️ Light" if is_dark else "🌙 Dark", key="btn_theme_toggle"):
+        st.session_state.theme = "light" if is_dark else "dark"
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
     section = st.session_state.get("active_section", "Dashboard")
     if   section == "Workouts":    show_workouts()
     elif section == "Nutrition":   show_nutrition()
@@ -2175,7 +2520,7 @@ def show_main_app():
 
     show_ai_fab()
 
-    st.markdown('<div style="text-align:center;padding:2rem 0 1rem;color:#374151;font-size:.78rem;">FitLog · Professional Fitness Tracking</div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align:center;padding:2rem 0 1rem;color:var(--muted);font-size:.78rem;">FitLog · Professional Fitness Tracking</div>', unsafe_allow_html=True)
 
 
 # ── Entry ─────────────────────────────────────────────────────
