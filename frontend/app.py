@@ -2152,6 +2152,26 @@ def show_profile():
         "fit":            ("General Fitness", "#059669", "rgba(5,150,105,.12)"),
     }
 
+    # CSS: red Remove/Yes-remove buttons — targets last stColumn in any
+    # stVerticalBlock whose direct-child stMarkdown holds .del-row-marker
+    st.markdown("""<style>
+    [data-testid="stVerticalBlock"]:has(>[data-testid="stMarkdown"] .del-row-marker)
+    >[data-testid="stHorizontalBlock"]
+    >[data-testid="stColumn"]:last-child
+    >[data-testid="stButton"]>button {
+        background-color:#DC2626 !important;
+        border-color:#DC2626 !important;
+        color:#ffffff !important;
+    }
+    [data-testid="stVerticalBlock"]:has(>[data-testid="stMarkdown"] .del-row-marker)
+    >[data-testid="stHorizontalBlock"]
+    >[data-testid="stColumn"]:last-child
+    >[data-testid="stButton"]>button:hover {
+        background-color:#B91C1C !important;
+        border-color:#B91C1C !important;
+    }
+    </style>""", unsafe_allow_html=True)
+
     # ── Account hero card ─────────────────────────────────────────
     uname    = user.get("name", "User")
     uemail   = user.get("email", "")
@@ -2181,6 +2201,7 @@ def show_profile():
     # ── Profiles list ─────────────────────────────────────────────
     profiles   = get_profiles(token)
     confirm_id = st.session_state.get("confirm_delete_id")
+    edit_pid   = st.session_state.get("edit_goals_pid")
 
     hdr_l, hdr_r = st.columns([3, 1])
     with hdr_l:
@@ -2192,12 +2213,8 @@ def show_profile():
             st.session_state.show_create_profile = not st.session_state.get("show_create_profile", False)
             st.rerun()
 
-    # Inline create form
+    # ── Inline create form (no raw HTML open/close div tags) ──────
     if st.session_state.get("show_create_profile", False):
-        st.markdown("""<div style="border:1.5px solid var(--accent);border-radius:12px;
-             padding:1.2rem 1.2rem .4rem;margin-bottom:1rem;
-             background:rgba(5,150,105,.04);">""", unsafe_allow_html=True)
-        _section_hdr("New Profile")
         with st.form("create_profile_form", clear_on_submit=True):
             cf_name = st.text_input("Profile Name", placeholder="e.g., Bulk Phase Q2")
             cf1, cf2 = st.columns(2)
@@ -2238,7 +2255,6 @@ def show_profile():
             if cf_cancelled:
                 st.session_state.show_create_profile = False
                 st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
 
     if not profiles:
         st.markdown("""
@@ -2257,10 +2273,10 @@ def show_profile():
             is_sel = pid == str(st.session_state.get("selected_profile_id") or "")
             goal_k = (p.get("goal") or "fit").lower()
             g_label, g_color, g_bg = _GOAL_META.get(goal_k, ("Fitness", "#0891B2", "rgba(8,145,178,.12)"))
-            w_kg   = p.get("weight_kg", "—")
-            h_cm   = p.get("height_cm", "—")
-            age_v  = p.get("age", "—")
-            gen_v  = (p.get("gender") or "").capitalize()
+            w_kg  = p.get("weight_kg", "—")
+            h_cm  = p.get("height_cm", "—")
+            age_v = p.get("age", "—")
+            gen_v = (p.get("gender") or "").capitalize()
 
             card_style = (
                 "border:2px solid var(--accent);box-shadow:0 0 0 4px rgba(5,150,105,.07);"
@@ -2272,9 +2288,10 @@ def show_profile():
                 if is_sel else ""
             )
 
+            # ── Profile card (pure HTML — no open/close split) ────
             st.markdown(f"""
             <div style="{card_style}border-radius:12px;padding:1rem 1.1rem .85rem;
-                 margin-bottom:.5rem;background:var(--surface2);">
+                 margin-bottom:.35rem;background:var(--surface2);">
               <div style="display:flex;align-items:flex-start;justify-content:space-between;
                    margin-bottom:.55rem;gap:.5rem;">
                 <div style="min-width:0;">
@@ -2291,117 +2308,142 @@ def show_profile():
                   Height&nbsp;<strong style="color:var(--text);">{h_cm} cm</strong></span>
                 <span style="font-size:.76rem;color:var(--muted);">
                   Age&nbsp;<strong style="color:var(--text);">{age_v}</strong></span>
-                <span style="font-size:.76rem;color:var(--muted);">
-                  {gen_v}</span>
+                <span style="font-size:.76rem;color:var(--muted);">{gen_v}</span>
               </div>
             </div>""", unsafe_allow_html=True)
 
-            # ── Confirm-delete banner ─────────────────────────────
+            # ── Confirm-delete bar ────────────────────────────────
             if confirm_id == pid:
                 st.markdown(f"""
-                <div style="border:1.5px solid #DC2626;border-radius:8px;padding:.65rem 1rem;
-                     margin-bottom:.5rem;margin-top:-.3rem;background:rgba(220,38,38,.05);">
+                <div style="border:1.5px solid #DC2626;border-radius:8px;padding:.6rem 1rem;
+                     margin-bottom:.35rem;background:rgba(220,38,38,.05);">
                   <span style="font-size:.84rem;font-weight:600;color:#DC2626;">
                     Remove <em>{pname_}</em>? This cannot be undone.
                   </span>
                 </div>""", unsafe_allow_html=True)
-                cc1, cc2 = st.columns(2)
-                with cc1:
-                    if st.button("Keep it", key=f"cancel_del_{pid}", use_container_width=True):
-                        del st.session_state["confirm_delete_id"]
-                        st.rerun()
-                with cc2:
-                    if st.button("Yes, remove", key=f"confirm_del_{pid}",
-                                 use_container_width=True, type="primary"):
-                        ok = _delete(f"/profile/{pid}")
-                        if ok:
-                            get_profiles.clear()
-                            if is_sel:
-                                st.session_state.selected_profile_id   = None
-                                st.session_state.selected_profile_name = ""
-                            if "confirm_delete_id" in st.session_state:
-                                del st.session_state["confirm_delete_id"]
-                            st.success(f"Profile '{pname_}' removed.")
+                with st.container():
+                    st.markdown('<span class="del-row-marker"></span>', unsafe_allow_html=True)
+                    cc1, cc2 = st.columns(2)
+                    with cc1:
+                        if st.button("Keep it", key=f"cancel_del_{pid}", use_container_width=True):
+                            del st.session_state["confirm_delete_id"]
                             st.rerun()
-                        else:
-                            st.error("Delete failed — please try again.")
+                    with cc2:
+                        if st.button("Yes, remove", key=f"confirm_del_{pid}", use_container_width=True):
+                            ok = _delete(f"/profile/{pid}")
+                            if ok:
+                                get_profiles.clear()
+                                if is_sel:
+                                    st.session_state.selected_profile_id   = None
+                                    st.session_state.selected_profile_name = ""
+                                if "confirm_delete_id" in st.session_state:
+                                    del st.session_state["confirm_delete_id"]
+                                if "edit_goals_pid" in st.session_state:
+                                    del st.session_state["edit_goals_pid"]
+                                st.success(f"Profile '{pname_}' removed.")
+                                st.rerun()
+                            else:
+                                st.error("Delete failed — please try again.")
+
             else:
-                # ── Normal action row ─────────────────────────────
-                if is_sel:
-                    acol, = st.columns([1])
-                    with acol:
-                        if st.button("Remove", key=f"del_{pid}", use_container_width=True):
-                            st.session_state.confirm_delete_id = pid
-                            st.rerun()
-                else:
-                    a1, a2 = st.columns(2)
-                    with a1:
-                        if st.button("Activate", key=f"sel_{pid}", use_container_width=True):
-                            st.session_state.selected_profile_id   = pid
-                            st.session_state.selected_profile_name = pname_
-                            st.rerun()
-                    with a2:
-                        if st.button("Remove", key=f"del_{pid}", use_container_width=True):
-                            st.session_state.confirm_delete_id = pid
-                            st.rerun()
+                # ── Normal action row: [Activate] [Edit Goals] [Remove] ──
+                goals_open = edit_pid == pid
+                with st.container():
+                    st.markdown('<span class="del-row-marker"></span>', unsafe_allow_html=True)
+                    if is_sel:
+                        # Active profile: Edit Goals | Remove
+                        ag1, ag2 = st.columns(2)
+                        with ag1:
+                            goals_label = "Close Goals" if goals_open else "Edit Goals"
+                            if st.button(goals_label, key=f"goals_{pid}", use_container_width=True):
+                                st.session_state.edit_goals_pid = None if goals_open else pid
+                                st.rerun()
+                        with ag2:
+                            if st.button("Remove", key=f"del_{pid}", use_container_width=True):
+                                st.session_state.confirm_delete_id = pid
+                                st.session_state.edit_goals_pid = None
+                                st.rerun()
+                    else:
+                        # Inactive: Activate | Edit Goals | Remove
+                        aa1, aa2, aa3 = st.columns(3)
+                        with aa1:
+                            if st.button("Activate", key=f"sel_{pid}", use_container_width=True):
+                                st.session_state.selected_profile_id   = pid
+                                st.session_state.selected_profile_name = pname_
+                                st.rerun()
+                        with aa2:
+                            goals_label = "Close Goals" if goals_open else "Edit Goals"
+                            if st.button(goals_label, key=f"goals_{pid}", use_container_width=True):
+                                st.session_state.edit_goals_pid = None if goals_open else pid
+                                st.rerun()
+                        with aa3:
+                            if st.button("Remove", key=f"del_{pid}", use_container_width=True):
+                                st.session_state.confirm_delete_id = pid
+                                st.session_state.edit_goals_pid = None
+                                st.rerun()
 
-    # ── Goals editor (active profile only) ────────────────────────
-    active_pid = str(st.session_state.get("selected_profile_id") or "")
-    if active_pid:
-        active_name = st.session_state.get("selected_profile_name", "Profile")
-        p_obj  = next((p for p in profiles if str(p.get("id")) == active_pid), {})
-        w_kg   = float(p_obj.get("weight_kg") or 75)
-        h_cm   = float(p_obj.get("height_cm") or 175)
-        age_v  = int(p_obj.get("age") or 30)
-        gen_v  = (p_obj.get("gender") or "male").lower()
-        goal_v = (p_obj.get("goal") or "fit").lower()
-        tdee   = (10 * w_kg + 6.25 * h_cm - 5 * age_v + (5 if gen_v == "male" else -161)) * 1.55
-        auto_cal  = round(tdee + (300 if goal_v == "muscle" else -500 if goal_v == "weight_loss" else 0))
-        auto_prot = round(w_kg * (2.0 if goal_v == "muscle" else 1.6))
+            # ── Inline goals form (opens below this card's buttons) ──
+            if edit_pid == pid and confirm_id != pid:
+                p_obj  = p
+                w_kg_g = float(p_obj.get("weight_kg") or 75)
+                h_cm_g = float(p_obj.get("height_cm") or 175)
+                age_g  = int(p_obj.get("age") or 30)
+                gen_g  = (p_obj.get("gender") or "male").lower()
+                goal_g = (p_obj.get("goal") or "fit").lower()
+                tdee   = (10 * w_kg_g + 6.25 * h_cm_g - 5 * age_g + (5 if gen_g == "male" else -161)) * 1.55
+                auto_cal  = round(tdee + (300 if goal_g == "muscle" else -500 if goal_g == "weight_loss" else 0))
+                auto_prot = round(w_kg_g * (2.0 if goal_g == "muscle" else 1.6))
 
-        st.markdown('<div style="margin-top:.75rem;"></div>', unsafe_allow_html=True)
-        with st.expander(f"Daily Goals — {active_name}"):
-            g = get_goals(token, active_pid)
-            with st.form("goals_form"):
-                gc1, gc2 = st.columns(2)
-                with gc1:
-                    g_steps = st.number_input("Daily Steps", min_value=0, max_value=100000,
-                        value=int(g.get("daily_steps") or 10000), step=500)
-                    g_water = st.number_input("Daily Water (ml)", min_value=0, max_value=10000,
-                        value=int(g.get("daily_water_ml") or 2000), step=100)
-                    override_cals = st.checkbox("Custom calorie target",
-                        value=bool(g.get("daily_calories")),
-                        help=f"Auto-computed TDEE: ~{auto_cal} kcal/day")
-                    g_cals = st.number_input(
-                        f"Daily Calories (kcal)  —  auto: {auto_cal}",
-                        min_value=500, max_value=20000,
-                        value=int(g.get("daily_calories") or auto_cal),
-                        step=50, disabled=not override_cals)
-                with gc2:
-                    g_wk = st.number_input("Workouts / Week", min_value=0, max_value=14,
-                        value=int(g.get("weekly_workouts") or 4), step=1)
-                    override_prot = st.checkbox("Custom protein target",
-                        value=bool(g.get("daily_protein_g")),
-                        help=f"Auto-computed: ~{auto_prot}g/day")
-                    g_prot = st.number_input(
-                        f"Daily Protein (g)  —  auto: {auto_prot}g",
-                        min_value=10.0, max_value=500.0,
-                        value=float(g.get("daily_protein_g") or float(auto_prot)),
-                        step=5.0, disabled=not override_prot)
-                if st.form_submit_button("Save Goals", use_container_width=True):
-                    payload: dict = {
-                        "daily_steps": g_steps,
-                        "weekly_workouts": g_wk,
-                        "daily_water_ml": float(g_water),
-                    }
-                    if override_cals:
-                        payload["daily_calories"] = g_cals
-                    if override_prot:
-                        payload["daily_protein_g"] = g_prot
-                    r = _put(f"/profile/{active_pid}/goals", payload)
-                    if r:
-                        get_goals.clear()
-                        st.success("Goals saved.")
+                st.markdown(f"""
+                <div style="border:1px solid var(--border);border-radius:10px;
+                     padding:.9rem 1rem .5rem;margin-bottom:.5rem;
+                     background:var(--surface2);">
+                  <div style="font-size:.7rem;font-weight:700;color:var(--muted);
+                       text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;">
+                    Daily Goals — {pname_}
+                  </div>
+                </div>""", unsafe_allow_html=True)
+                g = get_goals(token, pid)
+                with st.form(f"goals_form_{pid}"):
+                    gc1, gc2 = st.columns(2)
+                    with gc1:
+                        g_steps = st.number_input("Daily Steps", min_value=0, max_value=100000,
+                            value=int(g.get("daily_steps") or 10000), step=500)
+                        g_water = st.number_input("Daily Water (ml)", min_value=0, max_value=10000,
+                            value=int(g.get("daily_water_ml") or 2000), step=100)
+                        override_cals = st.checkbox("Custom calorie target",
+                            value=bool(g.get("daily_calories")),
+                            help=f"Auto-computed TDEE: ~{auto_cal} kcal/day")
+                        g_cals = st.number_input(
+                            f"Daily Calories — auto: {auto_cal}",
+                            min_value=500, max_value=20000,
+                            value=int(g.get("daily_calories") or auto_cal),
+                            step=50, disabled=not override_cals)
+                    with gc2:
+                        g_wk = st.number_input("Workouts / Week", min_value=0, max_value=14,
+                            value=int(g.get("weekly_workouts") or 4), step=1)
+                        override_prot = st.checkbox("Custom protein target",
+                            value=bool(g.get("daily_protein_g")),
+                            help=f"Auto-computed: ~{auto_prot}g/day")
+                        g_prot = st.number_input(
+                            f"Daily Protein (g) — auto: {auto_prot}g",
+                            min_value=10.0, max_value=500.0,
+                            value=float(g.get("daily_protein_g") or float(auto_prot)),
+                            step=5.0, disabled=not override_prot)
+                    if st.form_submit_button("Save Goals", use_container_width=True):
+                        payload: dict = {
+                            "daily_steps": g_steps,
+                            "weekly_workouts": g_wk,
+                            "daily_water_ml": float(g_water),
+                        }
+                        if override_cals:
+                            payload["daily_calories"] = g_cals
+                        if override_prot:
+                            payload["daily_protein_g"] = g_prot
+                        r = _put(f"/profile/{pid}/goals", payload)
+                        if r:
+                            get_goals.clear()
+                            st.success("Goals saved.")
 
 
 # ── AI Coach FAB ──────────────────────────────────────────────
