@@ -2165,26 +2165,17 @@ def show_profile():
     uemail   = user.get("email", "")
     initials = "".join(w[0].upper() for w in uname.split()[:2]) or "U"
 
-    st.markdown(f"""
-    <div class="card" style="padding:1.5rem 1.5rem 1.25rem;margin-bottom:1.25rem;">
-      <div style="display:flex;align-items:center;gap:1.1rem;">
-        <div style="flex-shrink:0;width:60px;height:60px;border-radius:50%;
-             background:linear-gradient(135deg,#059669 0%,#0891B2 100%);
-             display:flex;align-items:center;justify-content:center;
-             font-size:1.35rem;font-weight:800;color:#fff;letter-spacing:-.02em;
-             box-shadow:0 4px 18px rgba(5,150,105,.30);">{initials}</div>
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:1.05rem;font-weight:700;color:var(--text);
-               white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{uname}</div>
-          <div style="font-size:.8rem;color:var(--muted);margin-top:.1rem;">{uemail}</div>
-          <div style="margin-top:.45rem;">
-            <span style="font-size:.7rem;font-weight:700;color:var(--accent);
-                 background:rgba(5,150,105,.1);border-radius:20px;
-                 padding:.18rem .6rem;letter-spacing:.04em;text-transform:uppercase;">FitLog Member</span>
-          </div>
-        </div>
-      </div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="card" style="padding:1.5rem 1.5rem 1.25rem;margin-bottom:1.25rem;">'
+        f'<div style="display:flex;align-items:center;gap:1.1rem;">'
+        f'<div style="flex-shrink:0;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#059669 0%,#0891B2 100%);display:flex;align-items:center;justify-content:center;font-size:1.35rem;font-weight:800;color:#fff;letter-spacing:-.02em;box-shadow:0 4px 18px rgba(5,150,105,.30);">{initials}</div>'
+        f'<div style="flex:1;min-width:0;">'
+        f'<div style="font-size:1.05rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{uname}</div>'
+        f'<div style="font-size:.8rem;color:var(--muted);margin-top:.1rem;">{uemail}</div>'
+        f'<div style="margin-top:.45rem;"><span style="font-size:.7rem;font-weight:700;color:var(--accent);background:rgba(5,150,105,.1);border-radius:20px;padding:.18rem .6rem;letter-spacing:.04em;text-transform:uppercase;">FitLog Member</span></div>'
+        f'</div></div></div>',
+        unsafe_allow_html=True,
+    )
 
     # ── Profiles list ─────────────────────────────────────────────
     profiles   = get_profiles(token)
@@ -2245,15 +2236,14 @@ def show_profile():
                 st.rerun()
 
     if not profiles:
-        st.markdown("""
-        <div style="text-align:center;padding:2.5rem 1rem;border:1.5px dashed var(--border2);
-             border-radius:12px;margin-bottom:1rem;">
-          <div style="font-size:2rem;font-weight:300;color:var(--border2);margin-bottom:.65rem;">◈</div>
-          <div style="font-size:.95rem;font-weight:600;color:var(--text);margin-bottom:.3rem;">No profiles yet</div>
-          <div style="font-size:.82rem;color:var(--muted);">
-            Create your first fitness profile to unlock all tracking features.
-          </div>
-        </div>""", unsafe_allow_html=True)
+        st.markdown(
+            '<div style="text-align:center;padding:2.5rem 1rem;border:1.5px dashed var(--border2);border-radius:12px;margin-bottom:1rem;">'
+            '<div style="font-size:2rem;font-weight:300;color:var(--border2);margin-bottom:.65rem;">◈</div>'
+            '<div style="font-size:.95rem;font-weight:600;color:var(--text);margin-bottom:.3rem;">No profiles yet</div>'
+            '<div style="font-size:.82rem;color:var(--muted);">Create your first fitness profile to unlock all tracking features.</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
     else:
         for p in profiles:
             pid    = str(p.get("id", ""))
@@ -2276,39 +2266,30 @@ def show_profile():
                 if is_sel else ""
             )
 
-            # ── Profile card (pure HTML — no open/close split) ────
-            st.markdown(f"""
-            <div style="{card_style}border-radius:12px;padding:1rem 1.1rem .85rem;
-                 margin-bottom:.35rem;background:var(--surface2);">
-              <div style="display:flex;align-items:flex-start;justify-content:space-between;
-                   margin-bottom:.55rem;gap:.5rem;">
-                <div style="min-width:0;">
-                  <span style="font-size:.95rem;font-weight:700;color:var(--text);">{pname_}</span>
-                  {active_badge}
-                </div>
-                <span style="flex-shrink:0;font-size:.7rem;font-weight:700;color:{g_color};
-                     background:{g_bg};border-radius:20px;padding:.18rem .6rem;">{g_label}</span>
-              </div>
-              <div style="display:flex;gap:1.2rem;flex-wrap:wrap;">
-                <span style="font-size:.76rem;color:var(--muted);">
-                  Weight&nbsp;<strong style="color:var(--text);">{w_kg} kg</strong></span>
-                <span style="font-size:.76rem;color:var(--muted);">
-                  Height&nbsp;<strong style="color:var(--text);">{h_cm} cm</strong></span>
-                <span style="font-size:.76rem;color:var(--muted);">
-                  Age&nbsp;<strong style="color:var(--text);">{age_v}</strong></span>
-                <span style="font-size:.76rem;color:var(--muted);">{gen_v}</span>
-              </div>
-            </div>""", unsafe_allow_html=True)
+            # ── Profile card ──────────────────────────────────────
+            st.markdown(
+                f'<div style="{card_style}border-radius:12px;padding:1rem 1.1rem .85rem;margin-bottom:.35rem;background:var(--surface2);">'
+                f'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.55rem;gap:.5rem;">'
+                f'<div style="min-width:0;"><span style="font-size:.95rem;font-weight:700;color:var(--text);">{pname_}</span>{active_badge}</div>'
+                f'<span style="flex-shrink:0;font-size:.7rem;font-weight:700;color:{g_color};background:{g_bg};border-radius:20px;padding:.18rem .6rem;">{g_label}</span>'
+                f'</div>'
+                f'<div style="display:flex;gap:1.2rem;flex-wrap:wrap;margin-top:.1rem;">'
+                f'<span style="font-size:.76rem;color:var(--muted);">Weight&nbsp;<strong style="color:var(--text);">{w_kg} kg</strong></span>'
+                f'<span style="font-size:.76rem;color:var(--muted);">Height&nbsp;<strong style="color:var(--text);">{h_cm} cm</strong></span>'
+                f'<span style="font-size:.76rem;color:var(--muted);">Age&nbsp;<strong style="color:var(--text);">{age_v}</strong></span>'
+                f'<span style="font-size:.76rem;color:var(--muted);">{gen_v}</span>'
+                f'</div></div>',
+                unsafe_allow_html=True,
+            )
 
             # ── Confirm-delete bar ────────────────────────────────
             if confirm_id == pid:
-                st.markdown(f"""
-                <div style="border:1.5px solid #DC2626;border-radius:8px;padding:.6rem 1rem;
-                     margin-bottom:.35rem;background:rgba(220,38,38,.05);">
-                  <span style="font-size:.84rem;font-weight:600;color:#DC2626;">
-                    Remove <em>{pname_}</em>? This cannot be undone.
-                  </span>
-                </div>""", unsafe_allow_html=True)
+                st.markdown(
+                    f'<div style="border:1.5px solid #DC2626;border-radius:8px;padding:.6rem 1rem;margin-bottom:.35rem;background:rgba(220,38,38,.05);">'
+                    f'<span style="font-size:.84rem;font-weight:600;color:#DC2626;">Remove <em>{pname_}</em>? This cannot be undone.</span>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
                 cc1, cc2 = st.columns(2)
                 with cc1:
                     if st.button("Keep it", key=f"cancel_del_{pid}", use_container_width=True):
