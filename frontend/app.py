@@ -566,27 +566,12 @@ label { color: var(--muted) !important; }
 .empty-state-title { font-size:1rem; font-weight:700; color:var(--text); margin-bottom:.35rem; }
 .empty-state-sub { font-size:.82rem; color:var(--muted); }
 
-/* Profile section — red Remove / Yes-remove buttons.
-   Each action row wraps its columns in a st.container(); we inject
-   a zero-size .del-row-marker div inside that container.
-   The :has() selector finds the parent stVerticalBlock and colors
-   the last stColumn's button red. */
-div[data-testid="stVerticalBlock"]:has(.del-row-marker)
-  > div[data-testid="stHorizontalBlock"]
-  > div[data-testid="stColumn"]:last-child
-  > div[data-testid="stButton"]
-  > button {
+/* Profile section — red Remove buttons via data-testid targeting */
+[data-testid="stButton"]:has(button[data-testid="baseButton-secondary"])
+  button[data-testid="baseButton-secondary"].prof-del-btn {
     background-color: #DC2626 !important;
     border-color:     #DC2626 !important;
     color:            #ffffff !important;
-}
-div[data-testid="stVerticalBlock"]:has(.del-row-marker)
-  > div[data-testid="stHorizontalBlock"]
-  > div[data-testid="stColumn"]:last-child
-  > div[data-testid="stButton"]
-  > button:hover {
-    background-color: #B91C1C !important;
-    border-color:     #B91C1C !important;
 }
 </style>
 """
@@ -2324,66 +2309,63 @@ def show_profile():
                     Remove <em>{pname_}</em>? This cannot be undone.
                   </span>
                 </div>""", unsafe_allow_html=True)
-                with st.container():
-                    st.markdown('<div class="del-row-marker" style="display:none;height:0;"></div>', unsafe_allow_html=True)
-                    cc1, cc2 = st.columns(2)
-                    with cc1:
-                        if st.button("Keep it", key=f"cancel_del_{pid}", use_container_width=True):
-                            del st.session_state["confirm_delete_id"]
+                cc1, cc2 = st.columns(2)
+                with cc1:
+                    if st.button("Keep it", key=f"cancel_del_{pid}", use_container_width=True):
+                        del st.session_state["confirm_delete_id"]
+                        st.rerun()
+                with cc2:
+                    if st.button("Yes, remove", key=f"confirm_del_{pid}",
+                                 use_container_width=True, type="primary"):
+                        ok = _delete(f"/profile/{pid}")
+                        if ok:
+                            get_profiles.clear()
+                            if is_sel:
+                                st.session_state.selected_profile_id   = None
+                                st.session_state.selected_profile_name = ""
+                            if "confirm_delete_id" in st.session_state:
+                                del st.session_state["confirm_delete_id"]
+                            if "edit_goals_pid" in st.session_state:
+                                del st.session_state["edit_goals_pid"]
+                            st.success(f"Profile '{pname_}' removed.")
                             st.rerun()
-                    with cc2:
-                        if st.button("Yes, remove", key=f"confirm_del_{pid}", use_container_width=True):
-                            ok = _delete(f"/profile/{pid}")
-                            if ok:
-                                get_profiles.clear()
-                                if is_sel:
-                                    st.session_state.selected_profile_id   = None
-                                    st.session_state.selected_profile_name = ""
-                                if "confirm_delete_id" in st.session_state:
-                                    del st.session_state["confirm_delete_id"]
-                                if "edit_goals_pid" in st.session_state:
-                                    del st.session_state["edit_goals_pid"]
-                                st.success(f"Profile '{pname_}' removed.")
-                                st.rerun()
-                            else:
-                                st.error("Delete failed — please try again.")
+                        else:
+                            st.error("Delete failed — please try again.")
 
             else:
                 # ── Normal action row: [Activate] [Edit Goals] [Remove] ──
                 goals_open = edit_pid == pid
-                with st.container():
-                    st.markdown('<div class="del-row-marker" style="display:none;height:0;"></div>', unsafe_allow_html=True)
-                    if is_sel:
-                        # Active profile: Edit Goals | Remove
-                        ag1, ag2 = st.columns(2)
-                        with ag1:
-                            goals_label = "Close Goals" if goals_open else "Edit Goals"
-                            if st.button(goals_label, key=f"goals_{pid}", use_container_width=True):
-                                st.session_state.edit_goals_pid = None if goals_open else pid
-                                st.rerun()
-                        with ag2:
-                            if st.button("Remove", key=f"del_{pid}", use_container_width=True):
-                                st.session_state.confirm_delete_id = pid
-                                st.session_state.edit_goals_pid = None
-                                st.rerun()
-                    else:
-                        # Inactive: Activate | Edit Goals | Remove
-                        aa1, aa2, aa3 = st.columns(3)
-                        with aa1:
-                            if st.button("Activate", key=f"sel_{pid}", use_container_width=True):
-                                st.session_state.selected_profile_id   = pid
-                                st.session_state.selected_profile_name = pname_
-                                st.rerun()
-                        with aa2:
-                            goals_label = "Close Goals" if goals_open else "Edit Goals"
-                            if st.button(goals_label, key=f"goals_{pid}", use_container_width=True):
-                                st.session_state.edit_goals_pid = None if goals_open else pid
-                                st.rerun()
-                        with aa3:
-                            if st.button("Remove", key=f"del_{pid}", use_container_width=True):
-                                st.session_state.confirm_delete_id = pid
-                                st.session_state.edit_goals_pid = None
-                                st.rerun()
+                if is_sel:
+                    # Active profile: Edit Goals | Remove
+                    ag1, ag2 = st.columns(2)
+                    with ag1:
+                        goals_label = "Close Goals" if goals_open else "Edit Goals"
+                        if st.button(goals_label, key=f"goals_{pid}", use_container_width=True):
+                            st.session_state.edit_goals_pid = None if goals_open else pid
+                            st.rerun()
+                    with ag2:
+                        if st.button("Remove", key=f"del_{pid}", use_container_width=True):
+                            st.session_state.confirm_delete_id = pid
+                            st.session_state.edit_goals_pid = None
+                            st.rerun()
+                else:
+                    # Inactive: Activate | Edit Goals | Remove
+                    aa1, aa2, aa3 = st.columns(3)
+                    with aa1:
+                        if st.button("Activate", key=f"sel_{pid}", use_container_width=True):
+                            st.session_state.selected_profile_id   = pid
+                            st.session_state.selected_profile_name = pname_
+                            st.rerun()
+                    with aa2:
+                        goals_label = "Close Goals" if goals_open else "Edit Goals"
+                        if st.button(goals_label, key=f"goals_{pid}", use_container_width=True):
+                            st.session_state.edit_goals_pid = None if goals_open else pid
+                            st.rerun()
+                    with aa3:
+                        if st.button("Remove", key=f"del_{pid}", use_container_width=True):
+                            st.session_state.confirm_delete_id = pid
+                            st.session_state.edit_goals_pid = None
+                            st.rerun()
 
             # ── Inline goals form (opens below this card's buttons) ──
             if edit_pid == pid and confirm_id != pid:
