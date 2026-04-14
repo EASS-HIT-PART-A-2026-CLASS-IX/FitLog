@@ -546,6 +546,8 @@ _DEFAULTS: dict = {
     "selected_profile_id": None, "selected_profile_name": None,
     "active_section": "Dashboard", "chat_messages": [],
     "initial_load_done": False, "ai_nutrition": None,
+    "achievements_checked": False, "achievements": [],
+    "achievements_dismissed": False,
 }
 for k, v in _DEFAULTS.items():
     if k not in st.session_state:
@@ -884,6 +886,90 @@ def show_login():
     st.markdown("</div>", unsafe_allow_html=True)
 
 
+# ── Achievement check (fires once per login session) ──────────
+
+def _check_achievements() -> None:
+    """Compute goal achievement % for the last 7 days and fire toasts."""
+    if st.session_state.get("achievements_checked"):
+        return
+    st.session_state.achievements_checked = True
+
+    token = st.session_state.get("token", "")
+    pid   = str(st.session_state.get("selected_profile_id") or "")
+    if not token or not pid:
+        return
+
+    today     = date.today()
+    week_ago  = today - timedelta(days=6)
+
+    goals           = get_goals(token, pid)
+    steps_target    = int(goals.get("daily_steps")    or 10000)
+    freq_target     = int(goals.get("weekly_workouts") or 4)
+    cal_target      = int(goals.get("daily_calories")  or 2000)
+    protein_target  = float(goals.get("daily_protein_g") or 120)
+
+    all_steps    = get_analytics_steps(token, pid)
+    all_macros   = get_analytics_macros(token, pid)
+    all_workouts = get_analytics_workouts(token, pid)
+
+    def _pd(v) -> date | None:
+        try:
+            return date.fromisoformat(str(v)) if v else None
+        except Exception:
+            return None
+
+    week_steps    = [s for s in all_steps    if (_pd(s.get("entry_date")) or date.min) >= week_ago]
+    week_macros   = [m for m in all_macros   if (_pd(m.get("entry_date")) or date.min) >= week_ago]
+    week_workouts = [w for w in all_workouts if (_pd(w.get("log_date"))   or date.min) >= week_ago]
+
+    hits: list[dict] = []
+
+    if week_steps:
+        avg_steps = sum(s.get("steps", 0) for s in week_steps) / len(week_steps)
+        pct = min(100, int(avg_steps / steps_target * 100)) if steps_target else 0
+        if pct >= 80:
+            hits.append({"label": "Daily Steps", "pct": pct,
+                         "detail": f"{avg_steps:,.0f} avg/day vs goal {steps_target:,}",
+                         "color": "#00FF87"})
+
+    if week_macros:
+        avg_cals = sum(m.get("calories", 0) for m in week_macros) / len(week_macros)
+        cal_pct = max(0, 100 - int(abs(avg_cals - cal_target) / max(cal_target, 1) * 100))
+        if cal_pct >= 80:
+            hits.append({"label": "Calorie Target", "pct": cal_pct,
+                         "detail": f"{avg_cals:,.0f} kcal avg vs target {cal_target:,}",
+                         "color": "#00C2FF"})
+
+        avg_prot = sum(m.get("protein_g", 0) for m in week_macros) / len(week_macros)
+        prot_pct = min(100, int(avg_prot / protein_target * 100)) if protein_target else 0
+        if prot_pct >= 80:
+            hits.append({"label": "Protein Intake", "pct": prot_pct,
+                         "detail": f"{avg_prot:.0f}g avg/day vs goal {protein_target:.0f}g",
+                         "color": "#FFB347"})
+
+    if week_workouts:
+        workout_pct = min(100, int(len(week_workouts) / max(freq_target, 1) * 100))
+        if workout_pct >= 80:
+            hits.append({"label": "Workout Frequency", "pct": workout_pct,
+                         "detail": f"{len(week_workouts)} sessions this week vs goal {freq_target}",
+                         "color": "#00FF87"})
+
+    st.session_state.achievements = hits
+
+    if not hits:
+        return
+
+    for h in hits:
+        icon = "🏆" if h["pct"] >= 100 else "🔥"
+        st.toast(
+            f"{h['label']}: {h['pct']}% of goal! {h['detail']}",
+            icon=icon,
+        )
+
+    if any(h["pct"] >= 100 for h in hits):
+        st.balloons()
+
+
 # ── Dashboard ─────────────────────────────────────────────────
 
 def show_dashboard():
@@ -898,6 +984,42 @@ def show_dashboard():
       <h2>Welcome back, {user_name}</h2>
       <p>{"Profile: " + profile_name if profile_name else "Select a profile to start tracking"}</p>
     </div>""", unsafe_allow_html=True)
+
+    # ── Achievement banner ────────────────────────────────────
+    achievements = st.session_state.get("achievements", [])
+    if achievements and not st.session_state.get("achievements_dismissed"):
+        items_html = "".join(
+            f'<div style="display:flex;align-items:center;justify-content:space-between;'
+            f'padding:.45rem .6rem;background:rgba(255,255,255,0.04);border-radius:8px;margin-bottom:.3rem;">'
+            f'<div style="display:flex;align-items:center;gap:.6rem;">'
+            f'<span style="font-size:1rem;">{"🏆" if h["pct"] >= 100 else "🔥"}</span>'
+            f'<div><div style="font-size:.82rem;font-weight:600;color:#fff;">{h["label"]}'
+            f'<span style="margin-left:.4rem;font-size:.72rem;font-weight:700;'
+            f'color:{h["color"]};">{h["pct"]}%</span></div>'
+            f'<div style="font-size:.72rem;color:#9CA3AF;">{h["detail"]}</div></div>'
+            f'</div></div>'
+            for h in achievements
+        )
+        headline = (
+            "You crushed every goal this week — keep it up!"
+            if all(h["pct"] >= 100 for h in achievements)
+            else f"You hit {len(achievements)} goal{'s' if len(achievements) > 1 else ''} at 80%+ this week — keep pushing!"
+        )
+        st.markdown(
+            f'<div style="border:1px solid rgba(0,255,135,0.25);border-left:3px solid #00FF87;'
+            f'border-radius:10px;padding:1rem 1.1rem;margin-bottom:1rem;'
+            f'background:rgba(0,255,135,0.04);">'
+            f'<div style="font-size:.78rem;font-weight:700;color:#00FF87;'
+            f'text-transform:uppercase;letter-spacing:.08em;margin-bottom:.5rem;">'
+            f'This Week\'s Achievements</div>'
+            f'<div style="font-size:.85rem;color:#D1FAE5;margin-bottom:.65rem;">{headline}</div>'
+            f'{items_html}'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        if st.button("Dismiss", key="dismiss_achievements"):
+            st.session_state.achievements_dismissed = True
+            st.rerun()
 
     # ── Onboarding — new user with no profiles ────────────────
     if not profiles:
@@ -2035,7 +2157,13 @@ def show_main_app():
         if st.button("Sign Out", key="signout", use_container_width=True):
             for k in list(st.session_state.keys()):
                 del st.session_state[k]
+            # Reset achievement flags so they fire again on next login
+            st.session_state.achievements_checked  = False
+            st.session_state.achievements          = []
+            st.session_state.achievements_dismissed = False
             st.rerun()
+
+    _check_achievements()
 
     section = st.session_state.get("active_section", "Dashboard")
     if   section == "Workouts":    show_workouts()
