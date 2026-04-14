@@ -565,6 +565,29 @@ label { color: var(--muted) !important; }
 .empty-state-icon { font-size:2.5rem; margin-bottom:.75rem; }
 .empty-state-title { font-size:1rem; font-weight:700; color:var(--text); margin-bottom:.35rem; }
 .empty-state-sub { font-size:.82rem; color:var(--muted); }
+
+/* Profile section — red Remove / Yes-remove buttons.
+   Each action row wraps its columns in a st.container(); we inject
+   a zero-size .del-row-marker div inside that container.
+   The :has() selector finds the parent stVerticalBlock and colors
+   the last stColumn's button red. */
+div[data-testid="stVerticalBlock"]:has(.del-row-marker)
+  > div[data-testid="stHorizontalBlock"]
+  > div[data-testid="stColumn"]:last-child
+  > div[data-testid="stButton"]
+  > button {
+    background-color: #DC2626 !important;
+    border-color:     #DC2626 !important;
+    color:            #ffffff !important;
+}
+div[data-testid="stVerticalBlock"]:has(.del-row-marker)
+  > div[data-testid="stHorizontalBlock"]
+  > div[data-testid="stColumn"]:last-child
+  > div[data-testid="stButton"]
+  > button:hover {
+    background-color: #B91C1C !important;
+    border-color:     #B91C1C !important;
+}
 </style>
 """
 
@@ -2152,26 +2175,6 @@ def show_profile():
         "fit":            ("General Fitness", "#059669", "rgba(5,150,105,.12)"),
     }
 
-    # CSS: red Remove/Yes-remove buttons — targets last stColumn in any
-    # stVerticalBlock whose direct-child stMarkdown holds .del-row-marker
-    st.markdown("""<style>
-    [data-testid="stVerticalBlock"]:has(>[data-testid="stMarkdown"] .del-row-marker)
-    >[data-testid="stHorizontalBlock"]
-    >[data-testid="stColumn"]:last-child
-    >[data-testid="stButton"]>button {
-        background-color:#DC2626 !important;
-        border-color:#DC2626 !important;
-        color:#ffffff !important;
-    }
-    [data-testid="stVerticalBlock"]:has(>[data-testid="stMarkdown"] .del-row-marker)
-    >[data-testid="stHorizontalBlock"]
-    >[data-testid="stColumn"]:last-child
-    >[data-testid="stButton"]>button:hover {
-        background-color:#B91C1C !important;
-        border-color:#B91C1C !important;
-    }
-    </style>""", unsafe_allow_html=True)
-
     # ── Account hero card ─────────────────────────────────────────
     uname    = user.get("name", "User")
     uemail   = user.get("email", "")
@@ -2322,7 +2325,7 @@ def show_profile():
                   </span>
                 </div>""", unsafe_allow_html=True)
                 with st.container():
-                    st.markdown('<span class="del-row-marker"></span>', unsafe_allow_html=True)
+                    st.markdown('<div class="del-row-marker" style="display:none;height:0;"></div>', unsafe_allow_html=True)
                     cc1, cc2 = st.columns(2)
                     with cc1:
                         if st.button("Keep it", key=f"cancel_del_{pid}", use_container_width=True):
@@ -2349,7 +2352,7 @@ def show_profile():
                 # ── Normal action row: [Activate] [Edit Goals] [Remove] ──
                 goals_open = edit_pid == pid
                 with st.container():
-                    st.markdown('<span class="del-row-marker"></span>', unsafe_allow_html=True)
+                    st.markdown('<div class="del-row-marker" style="display:none;height:0;"></div>', unsafe_allow_html=True)
                     if is_sel:
                         # Active profile: Edit Goals | Remove
                         ag1, ag2 = st.columns(2)
@@ -2394,15 +2397,7 @@ def show_profile():
                 auto_cal  = round(tdee + (300 if goal_g == "muscle" else -500 if goal_g == "weight_loss" else 0))
                 auto_prot = round(w_kg_g * (2.0 if goal_g == "muscle" else 1.6))
 
-                st.markdown(f"""
-                <div style="border:1px solid var(--border);border-radius:10px;
-                     padding:.9rem 1rem .5rem;margin-bottom:.5rem;
-                     background:var(--surface2);">
-                  <div style="font-size:.7rem;font-weight:700;color:var(--muted);
-                       text-transform:uppercase;letter-spacing:.07em;margin-bottom:.5rem;">
-                    Daily Goals — {pname_}
-                  </div>
-                </div>""", unsafe_allow_html=True)
+                _section_hdr(f"Daily Goals — {pname_}")
                 g = get_goals(token, pid)
                 with st.form(f"goals_form_{pid}"):
                     gc1, gc2 = st.columns(2)
