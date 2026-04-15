@@ -1,209 +1,185 @@
 """
 FitLog EX3 Demo Script
-Demonstrates the complete flow of the FitLog system:
-1. Create a user profile
-2. Add exercises
-3. Log workouts
-4. Track macros
-5. View workout summary
-6. Show AI recommendations
+Walks through the complete FitLog flow end-to-end.
 
-Usage: uv run python scripts/demo.py
+Usage:
+    uv run python scripts/demo.py
+
+The script registers a fresh demo user each run so it is safe to re-run.
+Requires the API to be running on http://127.0.0.1:8000.
 """
 
+import uuid
 import httpx
-import json
 from datetime import date
 
 BASE = "http://127.0.0.1:8000"
-client = httpx.Client(base_url=BASE, timeout=10.0)
 
 
-def demo():
-    """Run the interactive demo."""
+def _check_api(client: httpx.Client) -> None:
+    try:
+        resp = client.get("/")
+        resp.raise_for_status()
+    except Exception:
+        print("ERROR: API is not running.")
+        print("  Start it with:  uv run uvicorn app.main:app --reload")
+        raise SystemExit(1)
+
+
+def demo() -> None:
+    client = httpx.Client(base_url=BASE, timeout=15.0)
+
     print("=" * 70)
-    print("🏋️  FitLog EX3 – Full-Stack Fitness Tracking Demo")
+    print("FitLog EX3 - Full-Stack Fitness Tracking Demo")
     print("=" * 70)
     print()
 
-    # 1. Create User Profile
-    print("📝 Step 1: Creating User Profile...")
-    profile_data = {
-        "name": "Alex Fitness",
-        "weight_kg": 80.0,
-        "height_cm": 178.0,
-        "age": 28,
-        "gender": "male",
-        "goal": "muscle",
-    }
-    profile = client.post("/profile/", json=profile_data).json()
+    _check_api(client)
+
+    # ── Step 1: Register a demo user ──────────────────────────────────────────
+    print("Step 1: Registering demo user...")
+    email = f"demo_{uuid.uuid4().hex[:8]}@fitlog.demo"
+    resp = client.post(
+        "/auth/register",
+        json={"email": email, "password": "DemoPass1!", "name": "Demo Athlete"},
+    )
+    if resp.status_code != 201:
+        print(f"  ERROR: {resp.text}")
+        raise SystemExit(1)
+    token = resp.json()["access_token"]
+    client.headers["Authorization"] = f"Bearer {token}"
+    print(f"  Registered: {email}")
+    print(f"  Token:      {token[:40]}...")
+    print()
+
+    # ── Step 2: Create a fitness profile ──────────────────────────────────────
+    print("Step 2: Creating fitness profile...")
+    resp = client.post(
+        "/profile/",
+        json={
+            "name": "Demo Athlete",
+            "weight_kg": 80.0,
+            "height_cm": 178.0,
+            "age": 28,
+            "gender": "male",
+            "goal": "muscle",
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    profile = resp.json()
     profile_id = profile["id"]
-    print(f"   ✅ Profile created: {profile['name']} ({profile['goal']} goal)")
-    print(f"   📊 ID: {profile_id}")
+    print(f"  Profile created: {profile['name']} (goal: {profile['goal']})")
+    print(f"  Profile ID: {profile_id}")
     print()
 
-    # 2. Get Protein Target
-    print("🥩 Step 2: Calculate Protein Target...")
-    protein_target = client.get(f"/profile/{profile_id}/protein-target").json()
-    print(f"   💪 Daily protein target: {protein_target['protein_g']} g")
-    print(f"   📈 {protein_target['multiplier_g_per_kg']} g per kg of body weight")
-    print(f"   💡 {protein_target['recommendation'][:80]}...")
+    # ── Step 3: Protein target ────────────────────────────────────────────────
+    print("Step 3: Calculating protein target...")
+    resp = client.get(f"/profile/{profile_id}/protein-target")
+    if resp.status_code == 200:
+        pt = resp.json()
+        print(f"  Daily protein target: {pt['protein_g']} g")
+        print(f"  Multiplier: {pt['multiplier_g_per_kg']} g/kg")
     print()
 
-    # 3. Create Exercises
-    print("🏋️  Step 3: Adding Exercises...")
+    # ── Step 4: Add exercises ─────────────────────────────────────────────────
+    print("Step 4: Adding exercises to library...")
     exercises_data = [
-        {"name": "Barbell Squat", "category": "strength", "muscle_group": "legs"},
-        {"name": "Bench Press", "category": "strength", "muscle_group": "chest"},
-        {"name": "Deadlift", "category": "strength", "muscle_group": "back"},
+        {"name": "Barbell Squat",  "category": "strength", "muscle_group": "legs"},
+        {"name": "Bench Press",    "category": "strength", "muscle_group": "chest"},
+        {"name": "Deadlift",       "category": "strength", "muscle_group": "back"},
         {"name": "Overhead Press", "category": "strength", "muscle_group": "shoulders"},
     ]
     exercises = []
     for ex in exercises_data:
         created = client.post("/exercises/", json=ex).json()
         exercises.append(created)
-        print(f"   ✅ {created['name']} [{created['muscle_group']}]")
+        print(f"  + {created['name']} [{created['muscle_group']}]")
     print()
 
-    # 4. Log Workouts
-    print("📝 Step 4: Logging Workouts...")
+    # ── Step 5: Log workouts ──────────────────────────────────────────────────
+    print("Step 5: Logging workouts...")
+    today = date.today().isoformat()
     workouts = [
-        {
-            "exercise": exercises[0],
-            "date": "2026-03-23",
-            "sets": 4,
-            "reps": 6,
-            "weight": 120.0,
-        },
-        {
-            "exercise": exercises[1],
-            "date": "2026-03-23",
-            "sets": 3,
-            "reps": 8,
-            "weight": 90.0,
-        },
-        {
-            "exercise": exercises[2],
-            "date": "2026-03-24",
-            "sets": 3,
-            "reps": 5,
-            "weight": 150.0,
-        },
-        {
-            "exercise": exercises[3],
-            "date": "2026-03-25",
-            "sets": 3,
-            "reps": 8,
-            "weight": 70.0,
-        },
+        {"exercise": exercises[0], "sets": 4, "reps": 6,  "weight": 120.0},
+        {"exercise": exercises[1], "sets": 3, "reps": 8,  "weight": 90.0},
+        {"exercise": exercises[2], "sets": 3, "reps": 5,  "weight": 150.0},
+        {"exercise": exercises[3], "sets": 3, "reps": 8,  "weight": 70.0},
     ]
-
     for w in workouts:
-        log = client.post(
+        client.post(
             "/logs/",
             json={
                 "exercise_id": w["exercise"]["id"],
-                "log_date": w["date"],
+                "profile_id": profile_id,
+                "log_date": today,
                 "sets": w["sets"],
                 "reps": w["reps"],
                 "weight_kg": w["weight"],
-                "notes": "Training session",
+                "notes": "Demo session",
             },
-        ).json()
+        )
+        vol = w["sets"] * w["reps"] * w["weight"]
         print(
-            f"   ✅ {w['date']}: {w['sets']}×{w['reps']} @ {w['weight']} kg ({w['exercise']['name']})"
+            f"  {w['sets']}x{w['reps']} @ {w['weight']} kg"
+            f"  ({w['exercise']['name']})  vol={vol:.0f} kg"
         )
     print()
 
-    # 5. Log Macros
-    print("🥗 Step 5: Logging Daily Nutrition...")
-    macros = [
-        {
-            "date": "2026-03-23",
+    # ── Step 6: Log macros ────────────────────────────────────────────────────
+    print("Step 6: Logging nutrition...")
+    client.post(
+        "/macros/",
+        json={
+            "entry_date": today,
             "calories": 3000,
-            "protein": 180,
-            "carbs": 350,
-            "fat": 80,
+            "protein_g": 180,
+            "carbs_g": 350,
+            "fat_g": 80,
+            "notes": "Demo day",
         },
-        {
-            "date": "2026-03-24",
-            "calories": 2800,
-            "protein": 175,
-            "carbs": 300,
-            "fat": 85,
-        },
-        {
-            "date": "2026-03-25",
-            "calories": 2300,
-            "protein": 170,
-            "carbs": 250,
-            "fat": 70,
-        },
-    ]
-
-    for m in macros:
-        macro = client.post(
-            "/macros/",
-            json={
-                "entry_date": m["date"],
-                "calories": m["calories"],
-                "protein_g": m["protein"],
-                "carbs_g": m["carbs"],
-                "fat_g": m["fat"],
-                "notes": "Daily log",
-            },
-        ).json()
-        print(
-            f"   ✅ {m['date']}: {m['calories']} kcal | P:{m['protein']}g C:{m['carbs']}g F:{m['fat']}g"
-        )
+    )
+    print("  3000 kcal | P:180g C:350g F:80g")
     print()
 
-    # 6. Get Workout Summary (EX3 Enhancement)
-    print("📊 Step 6: Viewing Workout Summary (EX3 Enhancement)...")
-    summary = client.get(f"/analytics/{profile_id}/workout-summary").json()
-    print(f"   📈 Total workouts: {summary['total_workouts']}")
-    print(f"   💥 Total volume: {summary['total_volume_kg']:.0f} kg")
-    print(f"   💪 Most worked: {summary['most_worked_muscle_group']}")
-    print(f"   🎯 Workouts per week: ~{summary['workouts_per_week']}")
-    print(f"   💡 Recommendation: {summary['recommendation'][:70]}...")
+    # ── Step 7: Workout summary (EX3 enhancement) ─────────────────────────────
+    print("Step 7: Viewing workout summary (EX3 enhancement feature)...")
+    resp = client.get(f"/analytics/{profile_id}/workout-summary")
+    if resp.status_code == 200:
+        s = resp.json()
+        print(f"  Total workouts:    {s['total_workouts']}")
+        print(f"  Total volume:      {s['total_volume_kg']:.0f} kg")
+        print(f"  Most worked group: {s['most_worked_muscle_group']}")
+        print(f"  Workouts this wk:  {s['workouts_per_week']}")
+        print(f"  Recommendation:    {s['recommendation'][:80]}...")
     print()
 
-    # 7. Chat with AI (if configured)
-    print("🤖 Step 7: Get AI Fitness Advice...")
+    # ── Step 8: AI chat (optional) ────────────────────────────────────────────
+    print("Step 8: AI fitness advisor (Groq)...")
     try:
-        ai_response = client.post(
+        resp = client.post(
             "/ai/chat",
             json={
                 "profile_id": profile_id,
-                "message": "Based on my profile, what should I focus on next week?",
+                "message": "Based on my workout today, what should I focus on tomorrow?",
             },
-        ).json()
-        print(f"   🤖 AI: {ai_response['reply'][:100]}...")
-    except Exception as e:
-        print(f"   ⚠️  AI not available: {e}")
+        )
+        if resp.status_code == 200:
+            print(f"  AI: {resp.json()['reply'][:100]}...")
+        else:
+            print(f"  Skipped (status {resp.status_code})")
+    except Exception as exc:
+        print(f"  Skipped: {exc}")
     print()
 
-    # Summary
+    # ── Done ──────────────────────────────────────────────────────────────────
     print("=" * 70)
-    print("✅ Demo Complete!")
+    print("Demo complete!")
+    print()
+    print("Access points:")
+    print("  API docs:  http://127.0.0.1:8000/docs")
+    print("  Frontend:  http://127.0.0.1:8501  (uv run streamlit run frontend/app.py)")
     print("=" * 70)
-    print()
-    print("🌐 Access the Dashboard:")
-    print("   - API Docs:  http://127.0.0.1:8000/docs")
-    print("   - Frontend:  http://127.0.0.1:8501")
-    print()
-    print("📚 Next Steps:")
-    print("   1. Visit http://127.0.0.1:8501 for the Streamlit dashboard")
-    print("   2. Log more workouts and nutrition data")
-    print("   3. View workout summaries and get AI recommendations")
-    print("   4. Check the API docs for more endpoints")
-    print()
 
 
 if __name__ == "__main__":
-    try:
-        demo()
-    except Exception as e:
-        print(f"❌ Error: {e}")
-        print("\n⚠️  Make sure the API is running:")
-        print("   uv run uvicorn app.main:app --reload")
+    demo()

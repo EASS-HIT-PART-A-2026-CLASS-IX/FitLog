@@ -183,5 +183,5 @@ async def delete_log(
     if not record:
         raise NotFoundError("Workout log not found")
 
-    session.delete(record)
+    await session.delete(record)
     await session.commit()

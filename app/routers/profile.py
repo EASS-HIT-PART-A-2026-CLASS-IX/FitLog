@@ -217,7 +217,7 @@ async def delete_profile(
     if not profile:
         raise NotFoundError("Profile not found")
 
-    session.delete(profile)
+    await session.delete(profile)
     await session.commit()
 
 

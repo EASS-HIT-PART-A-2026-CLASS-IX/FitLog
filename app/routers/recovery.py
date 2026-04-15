@@ -104,7 +104,7 @@ async def delete_recovery_entry(
     if not entry:
         raise NotFoundError("Recovery entry not found")
 
-    session.delete(entry)
+    await session.delete(entry)
     await session.commit()
 
 

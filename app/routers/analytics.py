@@ -125,7 +125,8 @@ async def get_workout_summary(
         if exercise:
             muscle_group_counts[exercise.muscle_group] += 1
 
-        if log.created_at and log.created_at >= week_ago:
+        log_ts = log.created_at.replace(tzinfo=timezone.utc) if log.created_at and log.created_at.tzinfo is None else log.created_at
+        if log_ts and log_ts >= week_ago:
             weekly_workouts += 1
 
     most_worked = (

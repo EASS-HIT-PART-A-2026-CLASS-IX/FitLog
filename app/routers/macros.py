@@ -253,5 +253,5 @@ async def delete_macro(
     if not record:
         raise NotFoundError("Macro entry not found")
 
-    session.delete(record)
+    await session.delete(record)
     await session.commit()

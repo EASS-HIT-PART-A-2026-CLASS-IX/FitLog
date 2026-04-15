@@ -1,400 +1,253 @@
-# 🚀 FitLog EX3 – Full-Stack Microservices Implementation
+# FitLog — EX3 Implementation Notes
 
-**Submission Date:** March 25, 2026  
-**Status:** ✅ COMPLETE
-
----
-
-## Executive Summary
-
-FitLog is a complete full-stack fitness tracking system demonstrating EX3 requirements:
-
-- ✅ **Three cooperating services**: FastAPI backend, Streamlit frontend, Celery async worker
-- ✅ **Docker Compose orchestration** with PostgreSQL, Redis, and containerized services
-- ✅ **Async refresh operation** with bounded concurrency and Redis idempotency
-- ✅ **Security baseline**: Hashed passwords, JWT tokens, role-based access
-- ✅ **Enhancement feature**: Workout summary analytics with ML-ready insights
-- ✅ **Comprehensive tests**: Unit tests for enhancement, integration tests, async tests
-- ✅ **Demo script**: `scripts/demo.py` walking through the entire flow
-- ✅ **Documentation**: Complete runbooks and architecture notes
+**Due:** 2026-07-01  
+**Repo:** FitLog — Full-Stack Fitness Tracking Microservices
 
 ---
 
-## Project Structure
+## 1. Three Cooperating Services
+
+| Service | Start command | Port |
+|---------|---------------|------|
+| FastAPI backend | `uv run uvicorn app.main:app --reload` | 8000 |
+| SQLite/SQLModel persistence | embedded in backend | — |
+| Streamlit frontend | `uv run streamlit run frontend/app.py` | 8501 |
+| Groq AI assistant (4th service) | loaded by backend on demand | — |
+
+### Architecture
 
 ```
-FitLog/
-├── app/
-│   ├── main.py              # FastAPI entry point
-│   ├── models.py            # Pydantic + SQLModel schemas
-│   ├── db.py                # SQLModel ORM definitions
-│   ├── database.py          # Database connection & sessions
-│   ├── security.py          # JWT, password hashing, auth helpers
-│   ├── tasks.py             # Celery async tasks
-│   ├── repository.py        # Data access layer (in-memory for EX1)
-│   └── routers/
-│       ├── profile.py       # User profiles + protein calculator
-│       ├── exercises.py     # Exercise CRUD
-│       ├── workout_logs.py  # Workout logging
-│       ├── macros.py        # Nutrition tracking
-│       ├── ai_assistant.py  # Gemini integration
-│       └── analytics.py     # 🆕 Workout summary (EX3 enhancement)
-├── frontend/
-│   ├── streamlit_app.py     # 🆕 Streamlit dashboard (EX2)
-│   └── README.md            # Frontend docs
-├── scripts/
-│   ├── seed.py              # Sample data generation
-│   ├── refresh.py           # 🆕 Async cache refresh with idempotency
-│   └── demo.py              # 🆕 Interactive demo
-├── tests/
-│   ├── conftest.py          # Fixtures
-│   ├── test_*.py            # Unit & integration tests
-│   └── test_analytics.py    # 🆕 Enhancement feature tests
-├── docs/
-│   ├── EX3-notes.md         # This file
-│   └── runbooks/
-│       └── compose.md       # Docker Compose guide
-├── compose.yaml             # 🆕 Docker Compose config (PostgreSQL, Redis, API, Worker)
-├── Dockerfile               # 🆕 Container image
-├── pyproject.toml           # Dependencies (updated for EX3)
-└── README.md                # Main documentation
+Streamlit (8501)
+      │ HTTP
+      ▼
+FastAPI (8000)
+  ├── SQLite via aiosqlite    ← persistence layer
+  ├── Redis (optional)        ← analytics cache + rate-limit store
+  └── Groq API                ← 4th microservice (LLM tool)
 ```
 
----
+All services run locally with `docker compose up` or individually with `uv run`.
 
-## Three Cooperating Services
+### Key files
 
-### 1. **FastAPI Backend** (`http://127.0.0.1:8000`)
-Primary API service with:
-- 27 REST endpoints covering profiles, exercises, workouts, macros, AI chat, analytics
-- Full CRUD operations
-- In-memory repository for EX1, upgradeable to SQLModel + SQLite/PostgreSQL
-- Pydantic validation on all inputs
-- Error handling with proper HTTP status codes
-
-**Key Endpoints:**
 ```
-GET    /                              # Health check
-POST   /profile/                      # Create profile
-GET    /profile/{id}/protein-target   # Protein calculator
-POST   /exercises/                    # Add exercise
-POST   /logs/                         # Log workout
-POST   /macros/                       # Log macros
-GET    /analytics/{id}/workout-summary # 🆕 Workout summary
-POST   /ai/chat                       # Chat with Gemini
-```
-
-### 2. **Streamlit Frontend** (`http://127.0.0.1:8501`)
-User-friendly dashboard with:
-- Profile management (create, select, view)
-- Exercise library (browse, add)
-- Workout logging (sets, reps, weight, notes)
-- Nutrition tracking (macros)
-- Protein target display with recommendations
-- Recent activity summaries
-- AI chat integration
-
-**Key Features:**
-- Real-time API integration via httpx
-- Session-based state management
-- Responsive multi-tab layout
-- Form validation (Streamlit built-in)
-- Error handling and user feedback
-
-### 3. **Celery Async Worker** (`fitlog-worker`)
-Background task processing with:
-- Workout summary generation (with Redis caching)
-- Nutrition analysis
-- Weekly digest preparation
-- Retry logic with exponential backoff
-- Redis-backed result storage
-
-**Key Tasks:**
-```python
-generate_workout_summary()    # Cache with 1-hour TTL
-analyze_nutrition()           # Cache with 6-hour TTL
-send_weekly_digest()          # Email prep (placeholder)
-refresh_user_cache()          # Idempotent bulk refresh
+app/
+  main.py          FastAPI entry point, router registration, CORS
+  db.py            SQLModel table definitions (User, FitnessProfile,
+                   Exercise, WorkoutLog, MacroEntry, SleepEntry,
+                   HydrationEntry, BodyMetricEntry, RecoveryEntry)
+  models.py        Pydantic request/response models
+  config.py        pydantic-settings Settings class
+  database.py      Async engine, get_session, WAL+PRAGMA setup
+  security.py      bcrypt hashing, JWT creation/validation
+  cache.py         Redis-backed cache with in-process fallback
+  routers/
+    auth.py        POST /auth/register, /auth/login, /auth/me
+    profile.py     FitnessProfile CRUD, protein-target calculator
+    exercises.py   Exercise CRUD (per-user)
+    workout_logs.py Workout log CRUD
+    macros.py      Nutrition CRUD + Groq food analysis
+    analytics.py   Workout summary + progress analytics (EX3 enhancement)
+    ai_assistant.py POST /ai/chat — Groq LLM with user context
+    sleep.py / hydration.py / body_metrics.py / recovery.py
+frontend/
+  app.py           Streamlit UI (all pages + auth flow)
+  _ai_fab.py       Floating AI coach button (JS injected via components.html)
+scripts/
+  refresh.py       Async cache refresh (Session 09 deliverable)
+  demo.py          End-to-end demo script
+  seed.py          Sample data seeder
+tests/             pytest suite (11+ test files, auth fixtures)
+docs/
+  EX3-notes.md     This file
+  runbooks/compose.md  Docker Compose operational guide
 ```
 
 ---
 
-## Docker Compose Orchestration
+## 2. Docker Compose Orchestration (`compose.yaml`)
 
-### Services Defined
-
-```yaml
-# 1. PostgreSQL 16 (Production DB)
-postgres:5432
-  - Database: fitlog
-  - Credentials: fitlog:fitlog_password
-  - Volume: postgres_data (persistent)
-  - Health check: pg_isready
-
-# 2. Redis 7 (Cache + Message Broker)
-redis:6379
-  - In-memory cache for workout summaries
-  - Celery message broker
-  - Sessions & idempotency keys
-  - Volume: redis_data (persistent)
-  - Health check: redis-cli ping
-
-# 3. FastAPI Backend
-api:8000
-  - Full Python environment with uv
-  - Environment:
-    - DATABASE_URL=postgresql+asyncpg://...
-    - REDIS_URL=redis://redis:6379/0
-    - GEMINI_API_KEY=${GEMINI_API_KEY}
-  - Depends on: postgres, redis (healthy)
-  - Reload mode for development
-
-# 4. Celery Worker
-worker:
-  - Async task processing
-  - Depends on: redis, postgres
-  - Loglevel: info
-```
-
-### Running Docker Compose
+Services: `redis`, `api`, `frontend`.  
+See [docs/runbooks/compose.md](runbooks/compose.md) for full operating instructions.
 
 ```bash
-# Start all services
-docker compose up -d
+# Start everything
+docker compose up --build -d
 
-# Check status
-docker compose ps
-
-# View logs
-docker compose logs -f api      # API logs
-docker compose logs -f worker   # Worker logs
-
-# Run migrations (if using SQLAlchemy)
-docker compose exec api uv run alembic upgrade head
-
-# Seed data
-docker compose exec api uv run python scripts/seed.py
-
-# Stop all services
-docker compose down
+# Verify
+curl http://127.0.0.1:8000/       # {"status":"ok"}
+docker compose exec redis redis-cli ping   # PONG
 ```
 
-### Health Checks
+### Health / rate-limit headers
 
-- **API**: `GET http://127.0.0.1:8000/` → `{"status": "ok"}`
-- **PostgreSQL**: `docker compose exec postgres pg_isready -U fitlog`
-- **Redis**: `docker compose exec redis redis-cli ping`
+The login endpoint enforces 10 req/60s per email address.  
+Verify with:
 
-**Rate Limiting Headers** (for load testing):
+```bash
+curl -s -D - -o /dev/null -X POST http://127.0.0.1:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"x@x.com","password":"x"}'
 ```
-X-RateLimit-Limit: 100
-X-RateLimit-Remaining: 99
-X-RateLimit-Reset: 1711353600
+
+### Running Schemathesis in CI
+
+```bash
+uv run schemathesis run http://127.0.0.1:8000/openapi.json --checks all
 ```
 
 ---
 
-## Async Cache Refresh (Session 09 Requirement)
+## 3. Async Cache Refresh — `scripts/refresh.py` (Session 09)
 
-### Script: `scripts/refresh.py`
+### What it does
 
-**Features:**
-- Bounded concurrency (max 5 concurrent tasks)
-- Redis-backed idempotency (prevents duplicate processing)
-- Exponential backoff retries (2^N seconds)
-- Comprehensive logging
-- CLI with --user-id or --all flags
+| Feature | Implementation |
+|---------|---------------|
+| Bounded concurrency | `asyncio.Semaphore(5)` — max 5 simultaneous refreshes |
+| Redis idempotency | `SETEX refresh:idempotency:{profile_id} 3600 in_progress` prevents duplicate runs within 1 hour |
+| Retries | Exponential backoff: 2^N seconds, up to 3 attempts |
+| Async HTTP | `httpx.AsyncClient` calls `GET /analytics/{id}/workout-summary` |
 
-**Usage:**
+### Usage
 
 ```bash
-# Refresh single user
-uv run python scripts/refresh.py --user-id <UUID>
+# Set a valid JWT for authenticated API calls
+export REFRESH_API_TOKEN="<token from /auth/login>"
 
-# Refresh all users
+# Refresh one profile
+uv run python scripts/refresh.py --profile-id <UUID>
+
+# Refresh all profiles (bounded concurrency)
 uv run python scripts/refresh.py --all
 ```
 
-**Idempotency Mechanism:**
-
-```python
-# Idempotency key stored in Redis for 1 hour
-redis_client.setex(f"refresh:idempotency:{user_id}", 3600, "in_progress")
-
-# Check before processing
-if redis_client.exists(idempotency_key):
-    return {"status": "skipped", "reason": "Already in progress"}
-```
-
-**Retry Logic:**
-
-```python
-# Exponential backoff
-wait_time = 2 ** retry_count  # 1s, 2s, 4s
-await asyncio.sleep(wait_time)
-return await refresh_user_cache(user_id, retry_count + 1)
-```
-
-**Redis Trace Example:**
+### Redis trace example
 
 ```
-[CACHE] SET refresh:idempotency:uuid123 → "in_progress" (TTL: 3600s)
-[CACHE] GET workout_summary:uuid123 → HIT (1-hour cache)
-[LOG] ✅ Refreshed cache for user uuid123
-        - Total workouts: 4
-        - Total volume: 2840 kg
-        - Most worked: legs
-[CACHE] SETEX workout_summary:uuid123 3600 {json}
-[ASYNC] Task completed in 250ms
+[INFO] Refreshing 3 profile(s) (max 5 concurrent)
+
+[CACHE] SET refresh:idempotency:abc-123 → 'in_progress' (TTL: 3600s)
+[CACHE] SETEX workout_summary:abc-123 → refreshed
+[LOG]   Refreshed profile abc-123
+        - Total workouts: 12
+        - Total volume:   8400 kg
+        - Most worked:    legs
+
+[CACHE] SET refresh:idempotency:def-456 → 'in_progress' (TTL: 3600s)
+[SKIP]  ghi-789 — refresh already in progress
+
+==============================
+  Successful : 2
+  Failed     : 0
+  Skipped    : 1
+==============================
+```
+
+### anyio test
+
+`tests/test_refresh.py` contains five `@pytest.mark.anyio` tests:
+
+```bash
+uv run pytest tests/test_refresh.py -v
 ```
 
 ---
 
-## Security Baseline (Session 11 Requirement)
+## 4. Security Baseline (Session 11)
 
-### Password Hashing
+### Password hashing
+
+`app/security.py` — bcrypt with 12 salt rounds:
 
 ```python
-# app/security.py
-from passlib.context import CryptContext
+def hash_password(password: str) -> str:
+    salt = bcrypt.gensalt(rounds=12)
+    return bcrypt.hashpw(password.encode(), salt).decode()
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# Hash on profile creation
-hashed = pwd_context.hash(plain_password)
-
-# Verify on login
-is_valid = pwd_context.verify(plain_password, hashed)
+def verify_password(plain: str, hashed: str) -> bool:
+    return bcrypt.checkpw(plain.encode(), hashed.encode())
 ```
 
-### JWT Token Management
+Legacy PBKDF2 hashes are supported for migration.
+
+### JWT-protected routes
+
+Every router uses `Depends(get_current_user_from_header)`.  
+Token payload: `{"user_id": "<uuid>", "email": "...", "exp": ...}`.  
+Default expiry: 24 hours (configurable via `ACCESS_TOKEN_EXPIRE_MINUTES`).
 
 ```python
-# Create token (24-hour expiry)
-token = create_access_token({"user_id": profile_id})
-
-# Verify token
-payload = verify_token(token)
-if not payload:
-    raise HTTPException(status_code=401, detail="Invalid token")
-
-# Access token structure
-{
-    "user_id": "uuid",
-    "exp": datetime.utcnow() + timedelta(hours=24)
-}
-```
-
-### Protected Endpoint Example
-
-```python
-@router.get("/{profile_id}/profile", response_model=UserProfileOut)
-async def get_protected_profile(
-    profile_id: UUID,
-    token: str = Header(...),
-):
+# app/routers/auth.py
+async def get_current_user_from_header(
+    authorization: str = Header(None),
+    session: AsyncSession = Depends(get_session),
+) -> User:
+    if not authorization:
+        raise AuthError("Missing authorization header")
+    token = authorization.removeprefix("Bearer ").strip()
     payload = verify_token(token)
     if not payload:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    
-    # Role check
-    if payload["user_id"] != str(profile_id) and payload.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Forbidden")
-    
-    return profiles_repo.get(profile_id)
+        raise AuthError("Invalid or expired token")
+    ...
 ```
 
-### Security Rotation Steps
+### Role model
 
-1. **Change SECRET_KEY**: Update `.env` file
+All resources are owner-scoped: every DB query filters by `owner_id == current_user.id`.  
+This prevents horizontal privilege escalation (user A cannot access user B's data).
+
+### Key rotation steps
+
+1. Generate a new secret:
    ```bash
-   SECRET_KEY=new-secret-key-$(date +%s)
+   python -c "import secrets; print(secrets.token_hex(32))"
    ```
+2. Update `SECRET_KEY` in `.env` and redeploy.
+3. All existing tokens are immediately invalidated (they were signed with the old key).
+4. Users must log in again to obtain a new token.
 
-2. **Invalidate existing tokens**: Implement token blacklist
-   ```python
-   # Store revoked tokens in Redis with TTL
-   redis_client.setex(f"revoked_token:{token}", token_ttl, "true")
-   ```
+### Security tests
 
-3. **Test rotation**: Verify old tokens are rejected
-   ```python
-   if redis_client.exists(f"revoked_token:{token}"):
-       raise HTTPException(status_code=401, detail="Token revoked")
-   ```
+`tests/test_auth_security.py` covers:
+
+```bash
+uv run pytest tests/test_auth_security.py -v
+```
+
+| Test | Asserts |
+|------|---------|
+| `test_exercises_no_token` | 401 with no Authorization header |
+| `test_expired_token_rejected` | 401 with `exp = now - 1s` |
+| `test_malformed_token_rejected` | 401 with garbage JWT string |
+| `test_token_with_nonexistent_user` | 401/404 for phantom user_id |
+| `test_valid_token_accepted` | 200 for fresh token |
 
 ---
 
-## Enhancement Feature: Workout Summary Analytics
+## 5. Enhancement Feature — Analytics API
 
-### Overview
+`GET /analytics/{profile_id}/workout-summary` is the EX3 enhancement:
 
-The **Workout Summary** endpoint (`GET /analytics/{profile_id}/workout-summary`) is the EX3 enhancement feature that:
-- Analyzes recent workout logs
-- Calculates total volume (sets × reps × weight)
-- Identifies most-worked muscle groups
-- Generates personalized recommendations
-- Caches results for performance
-- Demonstrates ML-readiness (can be extended with ML models)
+- Calculates total volume (`sets × reps × weight_kg`) across all logs
+- Identifies most-worked muscle group
+- Generates goal-specific recommendation (muscle / weight-loss / general)
+- Returns `WorkoutSummaryOut` JSON
 
-### Endpoint
+Additional analytics endpoints:
 
-```http
-GET /analytics/{profile_id}/workout-summary
+| Endpoint | Description |
+|----------|-------------|
+| `GET /analytics/summary` | Dashboard KPIs (streak, weekly workouts, avg calories) |
+| `GET /analytics/workout-volume` | Weekly volume aggregated by ISO week |
+| `GET /analytics/strength-progress` | Per-exercise 1RM progression |
+| `GET /analytics/body-metrics-trend` | Weight, BMI, body fat over time |
+| `GET /analytics/nutrition-trend` | Daily macro totals |
+| `GET /analytics/wellness-trend` | Sleep, hydration, recovery composite score |
 
-Response:
-{
-  "user_id": "uuid",
-  "name": "Alex Fitness",
-  "total_workouts": 4,
-  "total_volume_kg": 2840.0,
-  "most_worked_muscle_group": "legs",
-  "workouts_per_week": 1,
-  "recommendation": "You're lifting with great volume (2840 kg total)! Keep pushing leg volume..."
-}
-```
-
-### Implementation
-
-```python
-# app/routers/analytics.py
-@router.get("/{profile_id}/workout-summary", response_model=WorkoutSummaryOut)
-def get_workout_summary(profile_id: UUID) -> WorkoutSummaryOut:
-    """Generate workout summary with personalized recommendations."""
-    
-    # Calculate volume: sets × reps × weight
-    total_volume = sum(log["sets"] * log["reps"] * log["weight_kg"] for log in logs)
-    
-    # Track muscle groups
-    most_worked = max(muscle_groups, key=muscle_groups.get)
-    
-    # Tailor recommendation to goal
-    if goal == "muscle":
-        recommendation = f"Keep volume up! Consider adding more compounds."
-    else:
-        recommendation = f"Aim for balanced muscle group distribution."
-    
-    return WorkoutSummaryOut(
-        user_id=profile_id,
-        name=profile["name"],
-        total_workouts=len(logs),
-        total_volume_kg=total_volume,
-        most_worked_muscle_group=most_worked,
-        workouts_per_week=estimate_frequency(),
-        recommendation=recommendation,
-    )
-```
+All results are cached in Redis (TTL: configurable) with `app/cache.py`.
 
 ### Tests
-
-See `tests/test_analytics.py` for:
-- Basic endpoint test
-- Calculation accuracy test
-- Goal-specific recommendation test
-- 404 handling test
-- Response schema validation
-
-**Run tests:**
 
 ```bash
 uv run pytest tests/test_analytics.py -v
@@ -402,192 +255,71 @@ uv run pytest tests/test_analytics.py -v
 
 ---
 
-## Demo Script
-
-### `scripts/demo.py`
-
-Interactive demonstration of the entire FitLog system.
-
-**Features:**
-
-1. ✅ Create user profile
-2. ✅ Calculate protein target
-3. ✅ Add exercises
-4. ✅ Log workouts
-5. ✅ Track macros
-6. ✅ View workout summary (enhancement feature)
-7. ✅ Chat with AI
-
-**Run:**
+## 6. Demo Script
 
 ```bash
-# Make sure API is running
-uv run uvicorn app.main:app --reload
-
-# In another terminal
+# Requires API running on :8000
 uv run python scripts/demo.py
+
+# Or use the shell wrapper:
+bash scripts/demo.sh
 ```
 
-**Output:**
-
-```
-======================================================================
-🏋️  FitLog EX3 – Full-Stack Fitness Tracking Demo
-======================================================================
-
-📝 Step 1: Creating User Profile...
-   ✅ Profile created: Alex Fitness (muscle goal)
-
-🥩 Step 2: Calculate Protein Target...
-   💪 Daily protein target: 176.0 g
-
-🏋️  Step 3: Adding Exercises...
-   ✅ Barbell Squat [legs]
-   ✅ Bench Press [chest]
-   ...
-
-📊 Step 6: Viewing Workout Summary (EX3 Enhancement)...
-   📈 Total workouts: 4
-   💥 Total volume: 2840 kg
-   💪 Most worked: legs
-   🎯 Workouts per week: ~1
-
-✅ Demo Complete!
-```
+Flow:
+1. Registers a fresh demo user (safe to re-run)
+2. Creates a fitness profile
+3. Shows protein target recommendation
+4. Adds 4 exercises to the library
+5. Logs 4 workouts
+6. Logs daily macros
+7. Calls `GET /analytics/{id}/workout-summary` (EX3 enhancement)
+8. Optionally calls the AI coach
 
 ---
 
-## Testing Strategy
-
-### Test Coverage
-
-| Category | File | Tests | Status |
-|----------|------|-------|--------|
-| **Unit Tests** | `test_exercises.py` | 6 | ✅ PASS |
-| **Workout Logs** | `test_workout_logs.py` | 5 | ✅ PASS |
-| **Nutrition** | `test_macros.py` | 4 | ✅ PASS |
-| **Profiles** | `test_profile.py` | 6 | ✅ PASS |
-| **AI Assistant** | `test_ai_assistant.py` | 2 | ✅ PASS |
-| **Analytics** | `test_analytics.py` | 6 | ✅ PASS |
-| **Total** | | **29 tests** | ✅ **PASS** |
-
-### Run All Tests
+## 7. Test Suite
 
 ```bash
+# Run everything
 uv run pytest tests/ -v
 
 # With coverage
-uv run pytest tests/ --cov=app --cov-report=html
+uv run pytest tests/ --cov=app --cov-report=term-missing
+
+# Run only security tests
+uv run pytest tests/test_auth_security.py -v
+
+# Run only anyio async tests
+uv run pytest tests/test_refresh.py -v
 ```
 
-### Key Test Cases
-
-**Enhancement Feature Tests:**
-
-```python
-def test_workout_summary_basic(sample_profile, sample_workout_logs):
-    """Test basic workout summary endpoint."""
-    response = client.get(f"/analytics/{profile_id}/workout-summary")
-    assert response.status_code == 200
-    assert data["total_volume_kg"] >= 0
-    assert "recommendation" in data
-
-def test_workout_summary_calculation(sample_profile, sample_exercise):
-    """Test volume calculation: 4 sets × 6 reps × 460 kg = 11040 kg."""
-    assert data["total_workouts"] == 4
-    assert data["most_worked_muscle_group"] == "legs"
-
-def test_workout_summary_recommendation_for_muscle_goal():
-    """Test goal-specific recommendations."""
-    recommendation = data["recommendation"].lower()
-    assert ("leg" in recommendation or "compound" in recommendation)
-```
+| File | Focus |
+|------|-------|
+| `test_auth_security.py` | Expired/missing/tampered tokens |
+| `test_analytics.py` | Workout summary + analytics endpoints |
+| `test_refresh.py` | `pytest.mark.anyio` async tests |
+| `test_exercises.py` | Exercise CRUD |
+| `test_workout_logs.py` | Workout log CRUD |
+| `test_macros.py` | Nutrition CRUD |
+| `test_profile.py` | Fitness profile CRUD |
+| `test_body_metrics.py` | Body metrics CRUD |
+| `test_sleep.py` | Sleep entry CRUD |
+| `test_hydration.py` | Hydration CRUD |
+| `test_recovery.py` | Recovery CRUD |
 
 ---
 
-## AI Assistance
+## 8. AI Assistance
 
-This project was built with GitHub Copilot as a pair-programming partner.
+Built with Claude (Anthropic) as the primary pair-programming tool throughout EX1–EX3.
 
-**AI Assisted With:**
-- Architecture decisions (in-memory → SQLModel migration path)
-- Database schema design (SQLModel with relationships)
-- Celery task setup with Redis integration
-- Security implementation (bcrypt, JWT, role checks)
+AI-assisted areas:
+- Architecture design (SQLModel schema, router layout, cache strategy)
+- Security implementation (bcrypt, JWT, rate limiting)
+- Async patterns (anyio tests, bounded semaphore refresh script)
 - Docker Compose orchestration
-- Async refresh script with idempotency
-- Test structure and fixtures
-- Analytics feature design
-- Comprehensive documentation
+- Analytics feature (volume calculation, 1RM Epley formula, wellness trend)
+- Streamlit UI (dark/light theme, profile cards, AI FAB)
+- Comprehensive test suite and fixtures
 
-**All Code Was:**
-- ✅ Reviewed locally against FastAPI, SQLModel, and Celery documentation
-- ✅ Tested with pytest and TestClient
-- ✅ Verified with demo script
-- ✅ Documented with inline comments
-
----
-
-## Deployment Checklist
-
-- [ ] Set `.env` with secure values:
-  ```bash
-  SECRET_KEY=<generate-with-secrets.token_hex()>
-  GEMINI_API_KEY=<your-api-key>
-  DATABASE_URL=postgresql+asyncpg://...
-  ```
-
-- [ ] Run migrations:
-  ```bash
-  uv run alembic upgrade head
-  ```
-
-- [ ] Seed initial data:
-  ```bash
-  uv run python scripts/seed.py
-  ```
-
-- [ ] Test all endpoints:
-  ```bash
-  uv run pytest tests/ -v
-  ```
-
-- [ ] Run demo:
-  ```bash
-  uv run python scripts/demo.py
-  ```
-
-- [ ] Deploy with Docker Compose:
-  ```bash
-  docker compose up -d
-  ```
-
----
-
-## Future Enhancements
-
-1. **ML Integration**: Train models on workout volume trends
-2. **Notifications**: Push alerts for consistency streaks
-3. **Mobile App**: React Native / Flutter frontend
-4. **Social Features**: Friend competitions, group challenges
-5. **Integration APIs**: Wearable sync (Fitbit, Garmin, Apple Watch)
-6. **Advanced Analytics**: Periodization, fatigue monitoring, recovery tracking
-
----
-
-## References
-
-- **Sessions**: 02 (HTTP), 03 (FastAPI), 04 (Persistence), 09 (Async), 10 (Docker), 11 (Security), 12 (APIs)
-- **Framework Docs**:
-  - [FastAPI](https://fastapi.tiangolo.com/)
-  - [Pydantic](https://docs.pydantic.dev/)
-  - [SQLModel](https://sqlmodel.tiangolo.dev/)
-  - [Celery](https://docs.celeryproject.org/)
-  - [Redis](https://redis.io/)
-  - [Streamlit](https://docs.streamlit.io/)
-
----
-
-**Project Status: ✅ COMPLETE AND READY FOR SUBMISSION**
-
-*Last Updated: March 25, 2026*
+All code was reviewed locally against FastAPI, SQLModel, and httpx documentation before committing.

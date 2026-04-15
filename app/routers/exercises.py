@@ -104,5 +104,5 @@ async def delete_exercise(
     if not record:
         raise NotFoundError("Exercise not found")
     
-    session.delete(record)
+    await session.delete(record)
     await session.commit()

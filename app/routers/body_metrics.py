@@ -104,7 +104,7 @@ async def delete_body_metric_entry(
     if not entry:
         raise NotFoundError("Body metric entry not found")
 
-    session.delete(entry)
+    await session.delete(entry)
     await session.commit()
 
 

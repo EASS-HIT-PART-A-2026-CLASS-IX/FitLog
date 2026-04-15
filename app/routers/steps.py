@@ -126,5 +126,5 @@ async def delete_step_entry(
     entry = result.scalars().first()
     if not entry:
         raise NotFoundError("Step entry not found")
-    session.delete(entry)
+    await session.delete(entry)
     await session.commit()
