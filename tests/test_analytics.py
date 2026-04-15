@@ -1,4 +1,5 @@
 """Tests for /analytics endpoints (EX3 enhancement feature)."""
+import pytest
 from fastapi.testclient import TestClient
 
 
@@ -100,6 +101,3 @@ def test_nutrition_trend_endpoint(client: TestClient):
     resp = client.get("/analytics/nutrition-trend")
     assert resp.status_code == 200
     assert isinstance(resp.json(), list)
-
-
-import pytest
